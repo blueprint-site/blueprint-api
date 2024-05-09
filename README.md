@@ -17,3 +17,6 @@ Backend for the blueprint site
 ├── server.js        # Main server file
 └── package.json     # NPM dependencies and scripts
 ```
+---
+
+For route documentation, see the [README.md](routes/README.md) in the `routes` directory.
