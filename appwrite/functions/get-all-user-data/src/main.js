@@ -8,7 +8,6 @@ export default async ({ req, res, log }) => {
     ]);
 
     if (req.method === 'GET') {
-        // Serve the HTML page (potentially with a search form)
         const html = interpolate(getStaticFile('index.html'), {
             MEILISEARCH_ENDPOINT: process.env.MEILISEARCH_ENDPOINT,
             MEILISEARCH_INDEX_NAME: process.env.MEILISEARCH_INDEX_NAME,
@@ -32,8 +31,7 @@ export default async ({ req, res, log }) => {
 
     const index = meilisearch.index(process.env.MEILISEARCH_INDEX_NAME);
 
-    // NEW: Check if a userId is provided in the request
-    const userId = req.headers['x-user-id'] || req.body?.userId || req.query?.userId; // Adjust how you get the userId
+    const userId = req.headers['x-user-id'] || req.body?.userId || req.query?.userId;
 
     if (!userId) {
         return res.json({ error: 'User ID is required' }, 400);
@@ -51,15 +49,12 @@ export default async ({ req, res, log }) => {
         let cursor = null;
 
         do {
-            let queries = [
-                Query.limit(100)
-            ];
+            let queries = [Query.limit(100)];
 
             try {
                 // Tentative avec contains
-                queries.push(Query.equal(collectionConfig.row, [userId]));
+                queries.push(Query.contains(collectionConfig.row, [userId]));
             } catch (e) {
-                // Fallback vers equal si contains échoue
                 log(`"contains" failed, falling back to "equal" for ${collectionConfig.row}`);
                 queries.push(Query.equal(collectionConfig.row, userId));
             }
@@ -90,17 +85,27 @@ export default async ({ req, res, log }) => {
             collectionId: collectionConfig.id,
             row: collectionConfig.row,
             data: documents,
-
         });
+    }
+
+    try {
+        const searchResults = await index.search(userId, {
+            limit: 100,
+            attributesToRetrieve: ['title', 'description', 'slug'],
+        });
+
         return res.json({
             message: `Sync and search finished for user ${userId}.`,
             results: searchResults.hits,
+            data: allData,
         }, 200);
-    } catch (searchError) {
-        log(`Meilisearch search error: ${searchError}`);
+
+    } catch (error) {
+        log(`Meilisearch search error: ${error.message}`);
         return res.json({
             message: `Sync finished for user ${userId}, but search failed.`,
-            error: searchError.message,
+            error: error.message,
+            data: allData,
         }, 500);
     }
 };
