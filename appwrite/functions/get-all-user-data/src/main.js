@@ -5,11 +5,6 @@ import { MeiliSearch } from 'meilisearch';
 export default async ({ req, res, log }) => {
     throwIfMissing(process.env, [
         'APPWRITE_DATABASE_ID',
-        'APPWRITE_COLLECTION_ID',
-        'MEILISEARCH_ENDPOINT',
-        'MEILISEARCH_INDEX_NAME',
-        'MEILISEARCH_ADMIN_API_KEY',
-        'MEILISEARCH_SEARCH_API_KEY',
     ]);
 
     if (req.method === 'GET') {
@@ -44,50 +39,59 @@ export default async ({ req, res, log }) => {
         return res.json({ error: 'User ID is required' }, 400);
     }
 
-    // 🟢 Étape 1 & 2 (Combined): Récupérer les documents depuis Appwrite pour un utilisateur spécifique
-    let documents = [];
-    let cursor = null;
+    const collectionsConfig = [
+        { id: '67b2310d00356b0cb53c', row: 'user_id' },
+        { id: '67b2310d00356b0cb53c', row: 'authors_uuid' }
+    ];
 
-    do {
-        const queries = [
-            Query.limit(100),
-            Query.equal('userId', userId), // NEW: Filter by userId.  Assumes 'userId' field exists.
-        ];
+    let allData = [];
 
-        if (cursor) {
-            queries.push(Query.cursorAfter(cursor));
-        }
+    for (const collectionConfig of collectionsConfig) {
+        let documents = [];
+        let cursor = null;
 
-        const response = await databases.listDocuments(
-            process.env.APPWRITE_DATABASE_ID,
-            process.env.APPWRITE_COLLECTION_ID,
-            queries
-        );
+        do {
+            let queries = [
+                Query.limit(100)
+            ];
 
-        if (response.documents.length > 0) {
-            cursor = response.documents[response.documents.length - 1].$id;
-            documents.push(...response.documents);
-        } else {
-            log(`No more documents found for user ${userId}.`);
-            cursor = null;
-            break;
-        }
+            try {
+                // Tentative avec contains
+                queries.push(Query.equal(collectionConfig.row, [userId]));
+            } catch (e) {
+                // Fallback vers equal si contains échoue
+                log(`"contains" failed, falling back to "equal" for ${collectionConfig.row}`);
+                queries.push(Query.equal(collectionConfig.row, userId));
+            }
 
-        log(`Syncing chunk of ${response.documents.length} documents for user ${userId}...`);
-        await index.addDocuments(response.documents, { primaryKey: '$id' }); // Make sure userId is in the documents
-    } while (cursor !== null);
+            if (cursor) {
+                queries.push(Query.cursorAfter(cursor));
+            }
 
-    log(`Sync finished for user ${userId}.`);
+            const response = await databases.listDocuments(
+                process.env.APPWRITE_DATABASE_ID,
+                collectionConfig.id,
+                queries
+            );
 
-    // 🟢 Étape 3 & 4 :  No longer needed, as we are only syncing for a specific user.
-    // The old logic was for a full sync, which is not needed in this case.
+            if (response.documents.length > 0) {
+                cursor = response.documents[response.documents.length - 1].$id;
+                documents.push(...response.documents);
+            } else {
+                log(`No more documents found for user ${userId} in collection ${collectionConfig.id}.`);
+                cursor = null;
+                break;
+            }
 
-    // 🟢 Étape 5 : Search Meilisearch for the user's data (Example)
-    try {
-        const searchResults = await index.search('', { // You can add a search query here if needed
-            filter: `userId = ${userId}`, // Filter by userId
+            log(`Fetched chunk of ${response.documents.length} documents for user ${userId} from collection ${collectionConfig.id}...`);
+        } while (cursor !== null);
+
+        allData.push({
+            collectionId: collectionConfig.id,
+            row: collectionConfig.row,
+            data: documents,
+
         });
-
         return res.json({
             message: `Sync and search finished for user ${userId}.`,
             results: searchResults.hits,
