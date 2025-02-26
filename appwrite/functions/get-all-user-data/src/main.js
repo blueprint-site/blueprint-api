@@ -4,7 +4,6 @@ import { throwIfMissing } from './utils.js';
 export default async ({ req, res, log }) => {
     throwIfMissing(process.env, [
         'APPWRITE_DATABASE_ID',
-        'APPWRITE_COLLECTION_ID',
     ]);
 
     const client = new Client()
@@ -32,10 +31,18 @@ export default async ({ req, res, log }) => {
         let cursor = null;
 
         do {
-            const queries = [
-                Query.limit(100),
-                Query.equal(collectionConfig.row , userId),
+            let queries = [
+                Query.limit(100)
             ];
+
+            try {
+                // Tentative avec contains
+                queries.push(Query.equal(collectionConfig.row, [userId]));
+            } catch (e) {
+                // Fallback vers equal si contains échoue
+                log(`"contains" failed, falling back to "equal" for ${collectionConfig.row}`);
+                queries.push(Query.equal(collectionConfig.row, userId));
+            }
 
             if (cursor) {
                 queries.push(Query.cursorAfter(cursor));
@@ -43,7 +50,7 @@ export default async ({ req, res, log }) => {
 
             const response = await databases.listDocuments(
                 process.env.APPWRITE_DATABASE_ID,
-                collectionConfig.id, // Use the collection ID from the config
+                collectionConfig.id,
                 queries
             );
 
