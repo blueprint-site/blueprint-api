@@ -1,21 +1,10 @@
 import { Client, Databases, Query } from 'node-appwrite';
-import { getStaticFile, interpolate, throwIfMissing } from './utils.js';
-import { MeiliSearch } from 'meilisearch';
+import { throwIfMissing } from './utils.js';
 
 export default async ({ req, res, log }) => {
     throwIfMissing(process.env, [
         'APPWRITE_DATABASE_ID',
     ]);
-
-    if (req.method === 'GET') {
-        const html = interpolate(getStaticFile('index.html'), {
-            MEILISEARCH_ENDPOINT: process.env.MEILISEARCH_ENDPOINT,
-            MEILISEARCH_INDEX_NAME: process.env.MEILISEARCH_INDEX_NAME,
-            MEILISEARCH_SEARCH_API_KEY: process.env.MEILISEARCH_SEARCH_API_KEY,
-        });
-
-        return res.text(html, 200, { 'Content-Type': 'text/html; charset=utf-8' });
-    }
 
     const client = new Client()
         .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
@@ -23,13 +12,6 @@ export default async ({ req, res, log }) => {
         .setKey(req.headers['x-appwrite-key']);
 
     const databases = new Databases(client);
-
-    const meilisearch = new MeiliSearch({
-        host: process.env.MEILISEARCH_ENDPOINT,
-        apiKey: process.env.MEILISEARCH_ADMIN_API_KEY,
-    });
-
-    const index = meilisearch.index(process.env.MEILISEARCH_INDEX_NAME);
 
     const userId = req.headers['x-user-id'] || req.body?.userId || req.query?.userId;
 
@@ -49,15 +31,12 @@ export default async ({ req, res, log }) => {
         let cursor = null;
 
         do {
-            let queries = [Query.limit(100)];
-
-            try {
-                // Tentative avec contains
-                queries.push(Query.contains(collectionConfig.row, [userId]));
-            } catch (e) {
-                log(`"contains" failed, falling back to "equal" for ${collectionConfig.row}`);
-                queries.push(Query.equal(collectionConfig.row, userId));
-            }
+            const queries = [
+                Query.limit(100),
+                Array.isArray(collectionConfig.row)
+                    ? Query.contains(collectionConfig.row, [userId])
+                    : Query.equal(collectionConfig.row, userId),
+            ];
 
             if (cursor) {
                 queries.push(Query.cursorAfter(cursor));
@@ -88,24 +67,8 @@ export default async ({ req, res, log }) => {
         });
     }
 
-    try {
-        const searchResults = await index.search(userId, {
-            limit: 100,
-            attributesToRetrieve: ['title', 'description', 'slug'],
-        });
-
-        return res.json({
-            message: `Sync and search finished for user ${userId}.`,
-            results: searchResults.hits,
-            data: allData,
-        }, 200);
-
-    } catch (error) {
-        log(`Meilisearch search error: ${error.message}`);
-        return res.json({
-            message: `Sync finished for user ${userId}, but search failed.`,
-            error: error.message,
-            data: allData,
-        }, 500);
-    }
+    return res.json({
+        message: `Successfully retrieved data for user ${userId} from all collections.`,
+        data: allData,
+    }, 200);
 };
