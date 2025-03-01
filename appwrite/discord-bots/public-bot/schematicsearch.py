@@ -3,7 +3,7 @@ import discord
 import os
 
 # Charger la configuration de Meilisearch depuis les variables d'environnement
-client = meilisearch.Client(os.getenv("MEILISEARCH_URL"), os.getenv("MEILISEARCH_SEARCH_API_KEY"))
+client = meilisearch.Client(os.getenv("MEILISEARCH_URL"), os.getenv("SEARCH_TOKEN"))
 index = client.index("schematics")
 
 async def schematicsearch(interaction: discord.Interaction, query: str, limit: int = 1):
@@ -30,6 +30,6 @@ async def gen_embed(data):
     embed.set_author(name=data["$id"])
     embed.set_thumbnail(url=data.get("image_urls", [None])[0])
     embed.add_field(name="Loaders", value=loaders_field, inline=False)
-    embed.add_field(name="Download", value=f"https://nottelling.youthe.schematic/schematics/{data['slug']}", inline=False)
+    embed.add_field(name="Infos", value=f"https://nottelling.youthe.schematic/schematics/{data['slug']}", inline=False)
     embed.set_footer(text=f"Downloads: {data['downloads']}")
     return embed
