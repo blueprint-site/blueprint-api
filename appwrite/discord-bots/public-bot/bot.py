@@ -31,12 +31,12 @@ async def help_command(interaction: discord.Interaction):
     )
     embed.add_field(
         name="Addon Commands",
-        value="/addon search <query> [limit=1] - Search for addons on Blueprint.",
+        value="/addon search <query> [limit=1] [page=1] - Search for addons on Blueprint.",
         inline=False
     )
     embed.add_field(
         name="Schematic Commands",
-        value="/schematic search <query> [limit=1]",
+        value="/schematic search <query> [limit=1] [page=1]",
         inline=False
     )
     embed.add_field(
@@ -51,54 +51,74 @@ async def help_command(interaction: discord.Interaction):
 
 # Slash command for addon search
 @bot.tree.command(name="addon", description="Manages commands related to addons")
-async def addon_command(interaction: discord.Interaction, query: str, limit: int = 1):
+async def addon_command(interaction: discord.Interaction, query: str, limit: int = 1, page: int = 1):
     limit = max(1, min(limit, 5))
-    
+    page = max(1, page)
+
     # Defer the response to avoid InteractionResponded error
     await interaction.response.defer(ephemeral=True)
-    
+
     # Search for addons
-    await addonsearch(interaction=interaction, query=query, limit=limit)
+    await addonsearch(interaction=interaction, query=query, limit=limit, page=page)
+
 
 # Slash command for schematic search
 @bot.tree.command(name="schematic", description="Manages commands related to schematics")
-async def schematic_command(interaction: discord.Interaction, query: str, limit: int = 1):
+async def schematic_command(interaction: discord.Interaction, query: str, limit: int = 1, page: int = 1):
     limit = max(1, min(limit, 5))
-    
-    # Defer the response to avoid InteractionResponded error
-    await interaction.response.defer(ephemeral=True)
-    
-    # Search for schematics
-    await schematicsearch(interaction=interaction, query=query, limit=limit)
+    page = max(1, page)
 
-@bot.tree.command(name="link", description="Displays the link to the official website")
+    # Defer the response to avoid InteractionResponded error
+    # await interaction.response.defer(ephemeral=True) # Remove this line
+
+    # Search for schematics
+    await schematicsearch(interaction=interaction, query=query, limit=limit, page=page)
+
+@bot.tree.command(name="binfo", description="Displays the link to the official website")
 async def site_command(interaction: discord.Interaction):
     embed = discord.Embed(
         title="Official Website",
         description="Visit our website to discover more addons and schematics!",
         color=discord.Color.blue(),
-        url="https://your-website.com"  # Replace with your actual URL
+        url="https://blueprint-create.com"  # Replace with your actual URL
     )
-    
+
     # Add an image to the embed (optional)
-    embed.set_thumbnail(url="https://your-website.com/logo.png")  # Replace with your logo URL
-    
+    embed.set_thumbnail(url="https://blueprint-create.com/assets/logo-DKvTORrd.webp")  # Replace with your logo URL
+
     # Add additional information
     embed.add_field(
         name="Latest Updates",
         value="Check out the latest addons and schematics added to our site!",
         inline=False
     )
-    
+
     embed.add_field(
         name="Support",
         value="Need help? Visit our forum or contact us directly on the site.",
         inline=False
     )
-    
+
     # Add a footer
-    embed.set_footer(text="© 2025 Your Name - All rights reserved")
-    
+    embed.set_footer(text="© 2025 Blueprint - All rights reserved")
+
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="bdiscord", description="Displays the discord to the official website")
+async def site_command(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Official Discord",
+        description="Visit our discord to join the community!",
+        color=discord.Color.blue(),
+        url="https://discord.gg/GCA6CMKUYx"  # Replace with your actual URL
+    )
+
+    # Add an image to the embed (optional)
+    embed.set_thumbnail(url="https://blueprint-create.com/assets/logo-DKvTORrd.webp")  # Replace with your logo URL
+
+    # Add a footer
+    embed.set_footer(text="© 2025 Blueprint - All rights reserved")
+
     await interaction.response.send_message(embed=embed)
 
 bot.run(os.getenv("PUBLIC_DISCORD_TOKEN"))

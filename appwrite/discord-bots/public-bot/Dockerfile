@@ -20,9 +20,9 @@ WORKDIR /app
 # Copier les fichiers de la première étape
 COPY --from=builder /app /app
 
-ENV PUBLIC_DISCORD_TOKEN=$
-ENV SEARCH_TOKEN=$
-ENV MEILISEARCH_URL=$
+ENV PUBLIC_DISCORD_TOKEN=${PUBLIC_DISCORD_TOKEN}
+ENV SEARCH_TOKEN=${SEARCH_TOKEN}
+ENV MEILISEARCH_URL=${MEILISEARCH_URL}
 # Utiliser python-dotenv pour charger le .env à l'exécution
 RUN pip install --no-cache-dir -r requirements.txt
 
