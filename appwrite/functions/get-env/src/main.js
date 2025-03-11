@@ -2,14 +2,21 @@ const { throwIfMissing } = require('./utils.js');
 
 module.exports = async ({ req, res, log }) => {
     try {
-        throwIfMissing(process.env, [
+        const requiredKeys = [
             'APPWRITE_DATABASE_ID',
             'APPWRITE_URL',
             'MEILISEARCH_URL',
             'MEILISEARCH_SEARCH_API_KEY',
-        ]);
+        ];
 
-        return res.json(process.env);
+        throwIfMissing(process.env, requiredKeys);
+
+        const filteredEnv = requiredKeys.reduce((obj, key) => {
+            obj[key] = process.env[key];
+            return obj;
+        }, {});
+
+        return res.json(filteredEnv);
 
     } catch (error) {
         console.error(error);
