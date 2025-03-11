@@ -11,6 +11,7 @@ module.exports = async ({ req, res, log }) => {
         if (ALLOWED_ORIGINS.includes(origin)) {
             res.setHeader('Access-Control-Allow-Origin', origin);
         } else {
+            log(`CORS violation: Origin ${origin} is not allowed.`); // Added log
             return res.json({ error: 'CORS policy violation' }); // Changed res.status(403).json to res.json
         }
 
