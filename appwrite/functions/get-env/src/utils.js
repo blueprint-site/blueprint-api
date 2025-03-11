@@ -1,6 +1,5 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+const path = require('path');
+const fs = require('fs');
 
 /**
  * Throws an error if any of the keys are missing from the object
@@ -8,7 +7,7 @@ import fs from 'fs';
  * @param {string[]} keys
  * @throws {Error}
  */
-export function throwIfMissing(obj, keys) {
+function throwIfMissing(obj, keys) {
   const missing = [];
   for (let key of keys) {
     if (!(key in obj) || !obj[key]) {
@@ -20,8 +19,6 @@ export function throwIfMissing(obj, keys) {
   }
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const staticFolder = path.join(__dirname, '../static');
 
 /**
@@ -29,7 +26,7 @@ const staticFolder = path.join(__dirname, '../static');
  * @param {string} fileName
  * @returns {string} Contents of static/{fileName}
  */
-export function getStaticFile(fileName) {
+function getStaticFile(fileName) {
   return fs.readFileSync(path.join(staticFolder, fileName)).toString();
 }
 
@@ -38,6 +35,12 @@ export function getStaticFile(fileName) {
  * @param {Record<string, string | undefined>} values
  * @returns {string}
  */
-export function interpolate(template, values) {
+function interpolate(template, values) {
   return template.replace(/{{([^}]+)}}/g, (_, key) => values[key] || '');
 }
+
+module.exports = {
+  throwIfMissing,
+  getStaticFile,
+  interpolate
+};
