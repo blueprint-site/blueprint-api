@@ -11,7 +11,7 @@ module.exports = async ({ req, res, log }) => {
         if (ALLOWED_ORIGINS.includes(origin)) {
             res.setHeader('Access-Control-Allow-Origin', origin);
         } else {
-            return res.status(403).json({ error: 'CORS policy violation' });
+            return res.json({ error: 'CORS policy violation' }); // Changed res.status(403).json to res.json
         }
 
         const requiredKeys = [
@@ -32,6 +32,6 @@ module.exports = async ({ req, res, log }) => {
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: error.message });
+        return res.json({ error: error.message }); // Changed res.status(500).json to res.json
     }
 };
