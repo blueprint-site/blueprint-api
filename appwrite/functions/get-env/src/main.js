@@ -9,8 +9,8 @@ module.exports = async ({ req, res, log }) => {
             'MEILISEARCH_SEARCH_API_KEY',
         ]);
 
-        res.json(process.env);
-        return;
+        return res.json(process.env);
+
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: error.message });
