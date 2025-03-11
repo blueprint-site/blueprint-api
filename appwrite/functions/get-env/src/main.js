@@ -7,12 +7,14 @@ const ALLOWED_ORIGINS = ALLOWED_ORIGINS_ENV_VAR ? ALLOWED_ORIGINS_ENV_VAR.split(
 module.exports = async ({ req, res, log }) => {
     try {
         const origin = req.headers['origin'];
+        let corsMessage = null;
 
         if (ALLOWED_ORIGINS.includes(origin)) {
             res.setHeader('Access-Control-Allow-Origin', origin);
         } else {
-            log(`CORS violation: Origin ${origin} is not allowed.`); // Added log
-            return res.json({ error: 'CORS policy violation' }); // Changed res.status(403).json to res.json
+            corsMessage = `CORS violation: Origin ${origin} is not allowed.`;
+            log(corsMessage); // Added log
+            return res.json({ error: 'CORS policy violation', log: corsMessage }); // Changed res.status(403).json to res.json and added log
         }
 
         const requiredKeys = [
@@ -29,7 +31,12 @@ module.exports = async ({ req, res, log }) => {
             return obj;
         }, {});
 
-        return res.json(filteredEnv);
+        const response = { ...filteredEnv };
+        if (corsMessage) {
+            response.log = corsMessage;
+        }
+
+        return res.json(response);
 
     } catch (error) {
         console.error(error);
