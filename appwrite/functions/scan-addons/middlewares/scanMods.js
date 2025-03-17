@@ -17,7 +17,7 @@ function delay(ms) {
 }
 
 // Fonction pour essayer de gérer la rate limit
-async function retryOnRateLimit(func, maxRetries = 5, initialDelay = 5000) {
+async function retryOnRateLimit(func, maxRetries = 5, initialDelay = 1000) {
     let attempt = 0;
     let delayTime = initialDelay;
 
@@ -129,6 +129,30 @@ async function scanMods() {
         const maxIterations = 50;
         const allMods = [];
 
+        // Définition des listes pour le filtrage
+        const loadersList = [
+            'forge', 'fabric', 'quilt', 'liteloader', 'rift', 'bukkit', 'spigot', 'paper',
+            'fabric-api', 'fml', 'bedrock', 'sponge', 'tconstruct', 'curseforge', 'neoforge'
+        ];
+
+        const categoriesList = [
+            'storage', 'food', 'technology', 'utility', 'transportation', 'management',
+            'game-mechanics', 'adventure', 'worldgen', 'equipment', 'decoration', 'cursed',
+            'minigame', 'mobs', 'optimisation', 'economy', 'datapack', 'magic', 'social',
+            'library', 'optimization'
+        ];
+
+        const specialTags = ['client', 'server'];
+
+        // Fonction helper pour vérifier si une chaîne est une version Minecraft valide
+        function isMinecraftVersion(str) {
+            // Validation basique des versions Minecraft (exemple: 1.19.2, 1.20, etc.)
+            return typeof str === 'string' &&
+                (str.match(/^\d+\.\d+(\.\d+)?$/) || // Format standard (ex: 1.19.2)
+                    str.match(/^\d+w\d+[a-z]$/) ||     // Format snapshot (ex: 23w13a)
+                    str === 'snapshot');               // Tag générique "snapshot"
+        }
+
         while (iterationCount <= maxIterations) {
             console.log(`⏳ Iteration ${iterationCount}...`);
 
@@ -144,21 +168,24 @@ async function scanMods() {
                 })
             ]);
 
-            // Ajout des mods récupérés à la liste
+            // Traitement des mods CurseForge
             const curseForgeModsWithSource = CurseForgeMods.data.map(mod => {
-                const allLoaders = [
-                    'forge', 'fabric', 'quilt', 'liteloader', 'rift', 'bukkit', 'spigot', 'paper',
-                    'fabric-api', 'fml', 'bedrock', 'sponge', 'tconstruct', 'curseforge', 'neoforge'
-                ];
+                // Extraction des versions et autres tags à partir des fichiers
+                const allTags = [...new Set(mod.latestFiles?.flatMap(file => file.gameVersions || []) || [])];
 
-                // Extraction des versions Minecraft et des loaders
-                const gameVersions = [...new Set(mod.latestFiles?.flatMap(file => file.gameVersions || []) || [])];
-                const modLoaders = gameVersions
-                    .filter(version => typeof version === 'string' && allLoaders.includes(version.toLowerCase()));
+                // Filtrage correct pour chaque catégorie
+                const modLoaders = allTags.filter(tag =>
+                    typeof tag === 'string' && loadersList.includes(tag.toLowerCase())
+                );
 
-                // Retirer les loaders des catégories et versions Minecraft
-                const filteredCategories = mod.categories.filter(category => typeof category === 'string' && !allLoaders.includes(category.toLowerCase()));
-                const filteredVersions = gameVersions.filter(version => typeof version === 'string' && !allLoaders.includes(version.toLowerCase()));
+                const minecraftVersions = allTags.filter(tag =>
+                    typeof tag === 'string' && isMinecraftVersion(tag)
+                );
+
+                // Filtrage propre des catégories
+                const categories = mod.categories.filter(category =>
+                    typeof category === 'string' && categoriesList.includes(category.toLowerCase())
+                );
 
                 return {
                     project_id: mod.id.toString(),
@@ -170,27 +197,32 @@ async function scanMods() {
                     created_at: mod.created_at,
                     updated_at: mod.updated_at,
                     author: mod.authors.map(a => a.name).join(", "),
-                    categories: filteredCategories,
+                    categories: categories,
                     downloads: mod.downloadCount,
                     curseforge_raw: JSON.stringify(mod),
-                    minecraft_versions: filteredVersions,
+                    minecraft_versions: minecraftVersions,
                     loaders: modLoaders,
                 };
             });
             allMods.push(...curseForgeModsWithSource);
 
+            // Traitement des mods Modrinth
             const modrinthModsWithSource = ModrinthMods.map(mod => {
-                const allLoaders = [
-                    'forge', 'fabric', 'quilt', 'liteloader', 'rift', 'bukkit', 'spigot', 'paper',
-                    'fabric-api', 'fml', 'bedrock', 'sponge', 'tconstruct', 'curseforge', 'neoforge'
-                ];
-                // Extraction des versions Minecraft et des loaders
-                const minecraftVersions = [...new Set(mod.categories || [])];
-                const loaders = minecraftVersions.filter(version => allLoaders.includes(version.toLowerCase()));
+                // Pour Modrinth, on doit extraire correctement les informations
+                const categories = (mod.categories || []).filter(category =>
+                    typeof category === 'string' && categoriesList.includes(category.toLowerCase())
+                );
 
-                // Retirer les loaders des catégories et versions Minecraft
-                const filteredCategories = mod.categories.filter(category => typeof category === 'string' && !allLoaders.includes(category.toLowerCase()));
-                const filteredVersions = minecraftVersions.filter(version => typeof version === 'string' && !allLoaders.includes(version.toLowerCase()));
+                const modLoaders = (mod.categories || []).filter(category =>
+                    typeof category === 'string' && loadersList.includes(category.toLowerCase())
+                );
+
+                // Pour les versions Minecraft, nous devons les extraire depuis les données brutes
+                // Comme le format exact n'est pas clair dans votre code, nous supposons qu'elles
+                // se trouvent également dans les catégories ou dans un champ dédié
+                const minecraftVersions = (mod.game_versions || mod.versions || []).filter(version =>
+                    typeof version === 'string' && isMinecraftVersion(version)
+                );
 
                 return {
                     project_id: mod.project_id,
@@ -202,17 +234,17 @@ async function scanMods() {
                     created_at: mod.created_at,
                     updated_at: mod.updated_at,
                     author: mod.author,
-                    categories: filteredCategories,
+                    categories: categories,
                     downloads: mod.downloads,
                     modrinth_raw: JSON.stringify(mod),
-                    minecraft_versions: filteredVersions,
-                    loaders: loaders,
+                    minecraft_versions: minecraftVersions,
+                    loaders: modLoaders,
                 };
             });
             allMods.push(...modrinthModsWithSource);
 
             // Délai global avant l'enregistrement dans Appwrite
-            await delay(5000); // Délai de 5 secondes avant l'enregistrement dans Appwrite
+            await delay(1000); // Délai de 5 secondes avant l'enregistrement dans Appwrite
 
             // Enregistrement des mods avec source
             await saveModsWithSource(curseForgeModsWithSource, 'CurseForge');
