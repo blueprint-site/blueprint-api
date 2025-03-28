@@ -45,7 +45,7 @@ export default async function (req, res) {
                     TARGET_DB_ID,
                     collection.$id,
                     collection.name,
-                    collection.permissions
+                    collection.$permissions
                 );
 
                 // Copier les indexes
@@ -65,7 +65,7 @@ export default async function (req, res) {
                     collection.$id,
                     doc.$id,
                     doc,  // Contenu du document
-                    doc.permissions
+                    doc.$permissions
                 );
             }
             console.log(`Documents copiés pour ${collection.name}`);
