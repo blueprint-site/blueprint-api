@@ -1,0 +1,17 @@
+{
+  "name": "dev-db-sync",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "node-appwrite": "^12.0.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}
