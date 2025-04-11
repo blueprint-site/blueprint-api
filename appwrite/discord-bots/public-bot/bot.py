@@ -15,9 +15,9 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!!", intents=intents, help_command=None)
 bot.remove_command("help")
 
-
-async def load_extensions():
-    """Load cogs"""
+@bot.event
+async def setup_hook():
+    """Runs async setup before the bot logs in."""
     print("Loading cogs...")
     try:
         await bot.load_extension("cogs.general")
@@ -29,20 +29,6 @@ async def load_extensions():
     except commands.ExtensionError as e:
         print(f"Failed to load cog: {type(e).__name__} - {e}")
     print("Cogs loaded.")
-
-@bot.event
-async def setup_hook():
-    """Runs async setup before the bot logs in."""
-    print("Running setup hook...")
-    await load_extensions()
-    print("Setup hook complete.")
-
-    # Debug: Print all app commands registered in the tree
-    print("Checking command tree...")
-    app_commands = bot.tree.get_commands()
-    print(f"App commands found: {len(app_commands)}")
-    for cmd in app_commands:
-        print(f"  - {cmd.name}")
 
 
 @bot.event
