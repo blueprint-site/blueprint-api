@@ -155,3 +155,7 @@ fabric.properties
 *.tmp
 *.temp
 *.sass-cache
+
+# Python stuff:
+.venv
+__pycache__
