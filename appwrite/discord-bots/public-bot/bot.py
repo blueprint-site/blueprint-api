@@ -1,104 +1,77 @@
-import discord
-from discord import app_commands
-from discord.ext import commands
-from colorama import Back, Style
-from addonsearch import addonsearch
-from schematicsearch import schematicsearch
-import dotenv
+""" This is the main file for the bot. """
 import os
+import asyncio
+import traceback
+import dotenv
+import discord
+from discord.ext import commands
 
 dotenv.load_dotenv()
+TOKEN = os.getenv("PUBLIC_DISCORD_TOKEN")
+GUILD_ID = os.getenv("GUILD_ID")
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="??", intents=intents)
-
-# Remove the old help command
+bot = commands.Bot(command_prefix="!!", intents=intents, help_command=None)
 bot.remove_command("help")
 
 @bot.event
+async def setup_hook():
+    """Runs async setup before the bot logs in."""
+    print("Loading cogs...")
+    try:
+        await bot.load_extension("cogs.general")
+        await bot.load_extension("cogs.events")
+        await bot.load_extension("cogs.developer")
+        await bot.load_extension("cogs.moderation")
+        await bot.load_extension("cogs.leveling")
+        await bot.load_extension("cogs.search")
+    except commands.ExtensionError as e:
+        print(f"Failed to load cog: {type(e).__name__} - {e}")
+    print("Cogs loaded.")
+
+
+@bot.event
 async def on_ready():
-    # Synchronize slash commands with Discord
-    await bot.tree.sync()
-    print(f"{Back.GREEN}Logged in as {bot.user}{Style.RESET_ALL}")
+    """Synchronize slash commands with Discord"""
+    # In production, use the manual sync commands instead
+    try:
+        guild_commands = await bot.tree.sync()
+        print(f"App command sync complete: {len(guild_commands)} commands registered.")
+    except discord.DiscordServerError as e:
+        print(f"Command sync failed: Discord server error: {e}")
+    except discord.HTTPException as e:
+        print(f"Command sync failed: HTTP error: {e}")
+    except discord.DiscordException as e:
+        print(f"Command sync failed: {e}")
 
-@bot.tree.command(name="help", description="Displays the list of available commands")
-async def help_command(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="Commands available",
-        description="Addons & Schematics commands",
-        color=discord.Color.blurple()
-    )
-    embed.add_field(
-        name="Addon Commands",
-        value="/addon search <query> [limit=1] - Search for addons on Blueprint.",
-        inline=False
-    )
-    embed.add_field(
-        name="Schematic Commands",
-        value="/schematic search <query> [limit=1]",
-        inline=False
-    )
-    embed.add_field(
-        name="Data types",
-        value="""
-        <> - needed
-        [] - optional
-        """,
-        inline=False
-    )
-    await interaction.response.send_message(embed=embed)
 
-# Slash command for addon search
-@bot.tree.command(name="addon", description="Manages commands related to addons")
-async def addon_command(interaction: discord.Interaction, query: str, limit: int = 1):
-    limit = max(1, min(limit, 5))
-    
-    # Defer the response to avoid InteractionResponded error
-    await interaction.response.defer(ephemeral=True)
-    
-    # Search for addons
-    await addonsearch(interaction=interaction, query=query, limit=limit)
+async def main():
+    """Main function to start the bot"""
+    if TOKEN is None:
+        print("ERROR: Bot token not found in .env file!")
+        return
 
-# Slash command for schematic search
-@bot.tree.command(name="schematic", description="Manages commands related to schematics")
-async def schematic_command(interaction: discord.Interaction, query: str, limit: int = 1):
-    limit = max(1, min(limit, 5))
-    
-    # Defer the response to avoid InteractionResponded error
-    await interaction.response.defer(ephemeral=True)
-    
-    # Search for schematics
-    await schematicsearch(interaction=interaction, query=query, limit=limit)
+    try:
+        print("Starting bot...")
+        await bot.start(TOKEN)
+    except discord.LoginFailure:
+        print("ERROR: Improper token passed. Check your .env file.")
+    except discord.PrivilegedIntentsRequired:
+        print(
+            "ERROR: Privileged Intents (Members/Message Content) are not enabled in the Developer Portal or here."
+        )
+    except discord.HTTPException as e:
+        print(f"ERROR: HTTP request failed: {e}")
+    except discord.ConnectionClosed as e:
+        print(f"ERROR: Discord connection closed unexpectedly: {e}")
+    except (RuntimeError, TypeError, ValueError, OSError) as e:
+        print(f"CRITICAL ERROR: An unexpected error occurred: {e}")
+        traceback.print_exc()
 
-@bot.tree.command(name="link", description="Displays the link to the official website")
-async def site_command(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="Official Website",
-        description="Visit our website to discover more addons and schematics!",
-        color=discord.Color.blue(),
-        url="https://your-website.com"  # Replace with your actual URL
-    )
-    
-    # Add an image to the embed (optional)
-    embed.set_thumbnail(url="https://your-website.com/logo.png")  # Replace with your logo URL
-    
-    # Add additional information
-    embed.add_field(
-        name="Latest Updates",
-        value="Check out the latest addons and schematics added to our site!",
-        inline=False
-    )
-    
-    embed.add_field(
-        name="Support",
-        value="Need help? Visit our forum or contact us directly on the site.",
-        inline=False
-    )
-    
-    # Add a footer
-    embed.set_footer(text="© 2025 Your Name - All rights reserved")
-    
-    await interaction.response.send_message(embed=embed)
 
-bot.run(os.getenv("PUBLIC_DISCORD_TOKEN"))
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Bot shutdown requested.")
