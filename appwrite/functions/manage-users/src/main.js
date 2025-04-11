@@ -1,6 +1,5 @@
 import { Client, Users, Teams, Query } from 'node-appwrite';
 
-// Helper function (JavaScript compatible)
 const getUserTeamIds = async (teamsAdmin, userId, relevantTeamIds) => {
   const userTeamIds = [];
   try {
@@ -8,14 +7,12 @@ const getUserTeamIds = async (teamsAdmin, userId, relevantTeamIds) => {
       Query.equal('userId', userId),
       Query.limit(100)
     ]);
-
     memberships.memberships.forEach(membership => {
       if (relevantTeamIds.includes(membership.teamId)) {
         userTeamIds.push(membership.teamId);
       }
     });
   } catch (e) {
-    // Access .message directly (standard JS error property)
     console.error(`Error fetching teams for user ${userId}: ${e.message}`);
   }
   return userTeamIds;
@@ -49,59 +46,69 @@ export default async ({ req, res, log, error }) => {
   const teamsAdmin = new Teams(clientAdmin);
 
   const invokingUserId = req.headers['x-appwrite-user-id'] ?? 'unknown';
-  log(`Function invoked by User ID: ${invokingUserId}. (Execution permission assumed granted by Appwrite settings).`);
+  log(`Function invoked by User ID: ${invokingUserId}.`);
 
-  // Parsing request body (JS compatible error handling)
+  // --- 3. Handle Request Body (Check if Pre-Parsed) ---
   let action, payload;
+  let body = {}; // Default to empty object
+
   try {
-    const rawBody = req.body || '{}';
-    const body = JSON.parse(rawBody);
+    // Check the type of req.body
+    if (typeof req.body === 'string' && req.body.trim().length > 0) {
+        // If it's a non-empty string, parse it
+        log('Request body received as string, parsing...');
+        body = JSON.parse(req.body);
+    } else if (typeof req.body === 'object' && req.body !== null) {
+        // If it's already a non-null object, use it directly
+        log('Request body received as object (pre-parsed).');
+        body = req.body;
+    } else {
+         // If it's empty, null, or other type, log a warning
+        log(`Request body is empty or has unexpected type: ${typeof req.body}`);
+    }
+
+    // Extract action and payload from the resolved body object
     action = body.action;
     payload = body.payload;
-    if (!action) throw new Error('Missing "action" in request body.');
-  } catch (parseError) {
-    // Remove 'as Error', access .message directly
-    error(`Failed to parse request body: ${parseError.message}`);
+
+    // Validate that action exists *after* processing the body
+    if (!action) {
+      throw new Error('Missing "action" in request body.');
+    }
+     log(`Action: ${action}, Payload: ${JSON.stringify(payload)}`); // Log extracted action/payload
+
+  } catch (handleBodyError) {
+    error(`Failed to handle request body: ${handleBodyError.message}`);
+    error(`Raw request body type: ${typeof req.body}, value: ${req.body}`); // Log raw body info on error
     return res.json({ success: false, message: 'Invalid request format.' }, 400);
   }
 
-  // Executing action (JS compatible error handling)
   try {
     log(`Executing action: ${action}`);
 
     switch (action) {
       case 'listUsers': {
         const listQueries = [];
-        if (payload?.search) { // Optional chaining is fine in modern JS
-          listQueries.push(Query.search('search', payload.search));
-        }
-        const limit = parseInt(payload?.limit, 10) || 25; // Use optional chaining for default
-        const offset = parseInt(payload?.offset, 10) || 0; // Use optional chaining for default
+        if (payload?.search) { listQueries.push(Query.search('search', payload.search)); }
+        const limit = parseInt(payload?.limit, 10) || 25;
+        const offset = parseInt(payload?.offset, 10) || 0;
         listQueries.push(Query.limit(limit));
         listQueries.push(Query.offset(offset));
-
         const userList = await usersAdmin.list(listQueries);
-
-        const enrichedUsers = await Promise.all(
+        const enrichedUsers = await Promise.all( /* ... enrichment logic ... */
           userList.documents.map(async (user) => {
             const teamIds = await getUserTeamIds(teamsAdmin, user.$id, relevantTeamIds);
             return { ...user, teamIds: teamIds };
           })
         );
-
         log(`Returning ${enrichedUsers.length} enriched users (Total found: ${userList.total}).`);
         return res.json({ success: true, data: { total: userList.total, documents: enrichedUsers } });
       }
 
       case 'updateTeamMembership': {
-        if (!payload || !payload.userId || !payload.teamId || typeof payload.add !== 'boolean') {
-          throw new Error('Missing required payload fields for updateTeamMembership (userId, teamId, add).');
-        }
+        if (!payload?.userId || !payload.teamId || typeof payload.add !== 'boolean') { throw new Error(/*...*/); }
         const { userId, teamId, add } = payload;
-
-        if (!relevantTeamIds.includes(teamId)) {
-          throw new Error(`Invalid or disallowed teamId: ${teamId}`);
-        }
+        if (!relevantTeamIds.includes(teamId)) { throw new Error(/*...*/); }
 
         if (add) {
           try {
@@ -140,8 +147,7 @@ export default async ({ req, res, log, error }) => {
       }
     }
 
-  } catch (e) { // Remove ': any'
-    // Access .message and .stack directly
+  } catch (e) {
     error(`Error executing action "${action}": ${e.message} ${e.stack || ''}`);
     return res.json({ success: false, message: 'An error occurred while processing your request.' }, 500);
   }
