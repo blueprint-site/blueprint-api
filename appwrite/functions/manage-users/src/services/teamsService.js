@@ -1,7 +1,7 @@
 // src/services/teamsService.js
 import { ConflictError, NotFoundError } from '../utils/errors.js';
 import { MEMBERSHIP_REDIRECT_URL } from '../utils/config.js';
-import { getUserTeams } from './userService.js';
+import { getUserMemberships } from './userService.js';
 import { appwrite } from '../utils/appwrite.js';
 
 const { teamsSdk } = appwrite;
@@ -22,7 +22,6 @@ export const updateTeamMembership = async ({ payload }) => {
       'Internal validation failed: Invalid payload passed to updateTeamMembership service.'
     );
   }
-
 
   if (add) {
     try {
@@ -51,17 +50,26 @@ export const updateTeamMembership = async ({ payload }) => {
       throw addError;
     }
   } else {
+    // Remove user from team
     try {
-      const teams = await getUserTeams(userId);
+      const memberships = await getUserMemberships(userId);
 
-      if (teams.total === 0) {
-        // Throw specific error
+      if (memberships.total === 0) {
         throw new NotFoundError(
           `User ${userId} was not found in team ${teamId}.`
         );
       }
 
-      const membershipId = teams.memberships[0].$id;
+      const membershipId = memberships.find(
+        (membership) => membership.teamId === teamId
+      ).$id;
+
+      if (!membershipId) {
+        throw new NotFoundError(
+          `Membership ID not found for user ${userId} in team ${teamId}.`
+        );
+      }
+
       await teamsSdk.deleteMembership(teamId, membershipId);
       return {
         message: `User ${userId} removed from team ${teamId} (membership ${membershipId}).`,
@@ -71,7 +79,7 @@ export const updateTeamMembership = async ({ payload }) => {
       if (removeError instanceof NotFoundError) {
         throw removeError;
       }
-      error(
+      console.error(
         `SDK Error removing user ${userId} from team ${teamId}: ${removeError.message}`
       );
       throw removeError; // Re-throw other SDK errors

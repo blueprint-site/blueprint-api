@@ -1,7 +1,7 @@
 // src/handlers/authHandler.js
 
 import { ForbiddenError } from '../utils/errors.js';
-import { getUserTeams } from '../services/userService.js';
+import { getUserMemberships } from '../services/userService.js';
 import { adminTeamId } from '../utils/config.js';
 
 /**
@@ -13,7 +13,7 @@ import { adminTeamId } from '../utils/config.js';
 export const authorizeRequest = async (
   userId,
 ) => {
-  const teams = await getUserTeams(userId);
+  const teams = await getUserMemberships(userId);
   const isAdmin = teams.some(team => team.$id === adminTeamId);
 
   if (!isAdmin) {

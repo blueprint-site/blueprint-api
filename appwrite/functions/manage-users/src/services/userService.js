@@ -40,7 +40,7 @@ export const fetchUsers = async ({ payload }) => {
   const userWithTeamIds = await Promise.all(
     usersArray.map(async (user) => {
       try {
-        const teams = await usersSdk.listMemberships(userId);
+        const teams = await usersSdk.listMemberships(user.$id);
         return { ...user, teams };
       } catch (sdkError) {
         throw sdkError;
@@ -57,7 +57,7 @@ export const fetchUsers = async ({ payload }) => {
  * @returns {Promise<Membership[]>} - Array of user memberships.
  * @throws {Error} - Throws if the Appwrite SDK call fails unexpectedly.
  */
-export const getUserTeams = async (userId) => {
+export const getUserMemberships = async (userId) => {
   try {
     const { memberships } = await usersSdk.listMemberships(userId);
 
