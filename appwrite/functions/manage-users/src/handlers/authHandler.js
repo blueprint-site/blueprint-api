@@ -2,7 +2,9 @@
 
 import { ForbiddenError } from '../utils/errors.js';
 import { getUserMemberships } from '../services/userService.js';
-import { adminTeamId } from '../utils/config.js';
+import { config } from '../utils/config.js';
+
+const { adminTeamId } = config;
 
 /**
  * Checks if the invoking user is authorized (is an admin).

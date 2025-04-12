@@ -1,7 +1,7 @@
 // src/utils/appwrite.js
 
 import { Client, Users, Teams } from 'node-appwrite';
-import { config } from './config.js'; // Import the validated config
+import { config } from './config.js';
 
 // Initialize Appwrite Client
 const client = new Client()

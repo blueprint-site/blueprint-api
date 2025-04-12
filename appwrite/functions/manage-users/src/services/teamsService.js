@@ -1,10 +1,11 @@
 // src/services/teamsService.js
 import { ConflictError, NotFoundError } from '../utils/errors.js';
-import { MEMBERSHIP_REDIRECT_URL } from '../utils/config.js';
+import { config } from '../utils/config.js';
 import { getUserMemberships } from './userService.js';
 import { appwrite } from '../utils/appwrite.js';
 
 const { teamsSdk } = appwrite;
+const { MEMBERSHIP_REDIRECT_URL } = config;
 
 /**
  * Adds or removes a user from a specific relevant team.
