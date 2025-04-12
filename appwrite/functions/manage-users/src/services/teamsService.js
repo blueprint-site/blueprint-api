@@ -1,4 +1,4 @@
-// src/services/teamService.js
+// src/services/teamsService.js
 
 import { Query } from 'node-appwrite';
 import { ConflictError, NotFoundError } from '../utils/errors.js'; // Import custom errors
