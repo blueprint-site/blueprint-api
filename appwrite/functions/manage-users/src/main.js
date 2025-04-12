@@ -163,6 +163,7 @@ export default async ({ req, res, log, error }) => {
 
         if (add) {
           try {
+            log(`Calling createMembership with: teamId=<span class="math-inline">{teamId}, email=null, roles=['member'], url='...', name=null, userId=</span>{userId}`);
             const result = await teamsAdmin.createMembership(
               teamId,
               ['member'],
