@@ -163,13 +163,15 @@ export default async ({ req, res, log, error }) => {
 
         if (add) {
           try {
-            const result = await teamsAdmin.createMembership(
+            const membershipObj = await teamsAdmin.createMembership(
               teamId,
               ['member'],
               null,
               userId,
-              'https://blueprint-create.com',
+              null,
+              'https://blueprint-create.com'
             );
+            const result = await teamsAdmin.createMembership(membershipObj)
             log(
               `Added user ${userId} to team ${teamId} (Membership ID: ${result.$id})`
             );
@@ -178,8 +180,6 @@ export default async ({ req, res, log, error }) => {
               message: `User ${userId} added to team ${teamId}.`,
             });
           } catch (addError) {
-            // Remove ': any'
-            // Use optional chaining ?. for safe access (good JS practice)
             if (addError?.code === 409) {
               log(
                 `User ${userId} already in team ${teamId}. No action needed.`
@@ -192,7 +192,6 @@ export default async ({ req, res, log, error }) => {
             throw addError;
           }
         } else {
-          // Remove
           const membershipsList = await teamsAdmin.listMemberships(teamId, [
             Query.equal('userId', userId),
             Query.limit(1),
