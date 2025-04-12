@@ -25,7 +25,6 @@ if (missingVars.length > 0) {
 }
 
 const MEMBERSHIP_REDIRECT_URL = 'https://blueprint-create.com';
-const relevantTeamIdsSet = new Set([adminTeamId, betaTesterTeamId]);
 
 export const config = {
   apiKey,
@@ -33,6 +32,5 @@ export const config = {
   endpoint,
   adminTeamId,
   betaTesterTeamId,
-  relevantTeamIdsSet,
   MEMBERSHIP_REDIRECT_URL,
 };

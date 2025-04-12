@@ -11,7 +11,7 @@ import {
 } from './handlers/requestHandler.js';
 
 const { usersSdk, teamsSdk } = appwrite;
-const { relevantTeamIdsSet, adminTeamId, MEMBERSHIP_REDIRECT_URL } = config;
+const { adminTeamId, MEMBERSHIP_REDIRECT_URL } = config;
 
 export default async ({ req, res, log, error }) => {
     const start = Date.now();
@@ -20,7 +20,7 @@ export default async ({ req, res, log, error }) => {
     log(`Invocation Start. User ID: ${invokingUserId}. Method: ${req.method}. Path: ${req.path}.`);
 
     try {
-        await authorizeRequest(invokingUserId, { teamsSdk, relevantTeamIdsSet, adminTeamId });
+        await authorizeRequest(invokingUserId, { teamsSdk, adminTeamId });
         log(`User ${invokingUserId} authorized.`);
 
         const { action, payload } = parseAndValidateRequest(req);
@@ -30,7 +30,7 @@ export default async ({ req, res, log, error }) => {
             action,
             payload,
             services: { usersSdk, teamsSdk },
-            config: { relevantTeamIdsSet, membershipRedirectUrl: MEMBERSHIP_REDIRECT_URL }
+            config: { membershipRedirectUrl: MEMBERSHIP_REDIRECT_URL }
         });
 
         const duration = Date.now() - start;

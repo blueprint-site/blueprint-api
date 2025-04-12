@@ -1,24 +1,15 @@
 // src/services/userService.js
-
 import { Query } from 'node-appwrite';
-import { getUserRelevantTeamIds } from './teamsService.js';
 
 /**
  * Lists users, optionally filters, and enriches them with relevant team IDs.
  * @param {object} params - Parameters object.
  * @param {Users} params.usersSdk - Initialized Appwrite Users SDK.
- * @param {Teams} params.teamsSdk - Initialized Appwrite Teams SDK.
  * @param {object} params.payload - Payload containing list options (search, limit, offset).
- * @param {Set<string>} params.relevantTeamIdsSet - Set of relevant team IDs.
  * @returns {Promise<{total: number, users: Array<object>}>} - Object with total count and enriched user list.
  * @throws {Error} - If SDK calls fail or unexpected structure received.
  */
-export const listUsersWithTeams = async ({
-  usersSdk,
-  teamsSdk,
-  payload,
-  relevantTeamIdsSet,
-}) => {
+export const listUsersWithTeams = async ({ usersSdk, payload }) => {
   const listQueries = [];
   const search = payload?.search;
   const limit = parseInt(payload?.limit, 10) || 25;
@@ -34,27 +25,25 @@ export const listUsersWithTeams = async ({
 
   const usersArray = userListResult.users;
   if (!Array.isArray(usersArray)) {
-    console.error('Unexpected user list structure:', userListResult);
+    error('Unexpected user list structure:', userListResult);
     throw new Error(
       'Internal error: Failed to retrieve expected user list data structure.'
     );
   }
 
   if (usersArray.length === 0) {
-    return { total: 0, users: [] }; // Return data structure
+    return { total: 0, users: [] };
   }
 
   const userWithTeamIds = await Promise.all(
     usersArray.map(async (user) => {
-      const teamIds = await getUserRelevantTeamIds(
-        teamsSdk,
-        relevantTeamIdsSet,
-        user.$id
-      );
-      return {
-        ...user,
-        teamIds: teamIds,
-      };
+      try {
+        const teams = await usersSdk.listMemberships(userId);
+        return { ...user, teams };
+      } catch (sdkError) {
+        error(`SDK Error getting teams for ${userId}: ${sdkError.message}`);
+        throw sdkError;
+      }
     })
   );
 

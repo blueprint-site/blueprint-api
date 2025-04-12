@@ -4,38 +4,6 @@ import { Query } from 'node-appwrite';
 import { ConflictError, NotFoundError } from '../utils/errors.js'; // Import custom errors
 
 /**
- * Fetches the IDs of the relevant teams a user belongs to.
- * @param {Teams} teamsSdk - Initialized Appwrite Teams SDK.
- * @param {Set<string>} relevantTeamIdsSet - Set of relevant team IDs.
- * @param {string} userId - The user ID.
- * @returns {Promise<string[]>} - Array of relevant team IDs.
- * @throws {Error} - Throws if the Appwrite SDK call fails unexpectedly.
- */
-export const getUserRelevantTeamIds = async (
-  teamsSdk,
-  relevantTeamIdsSet,
-  userId
-) => {
-  try {
-    const response = await teamsSdk.listMemberships(undefined, [
-      Query.equal('userId', [userId]),
-      Query.limit(100),
-    ]);
-
-    const userTeamIds = response.memberships
-      .map((membership) => membership.teamId)
-      .filter((teamId) => relevantTeamIdsSet.has(teamId));
-
-    return userTeamIds;
-  } catch (sdkError) {
-    console.error(
-      `SDK Error in getUserRelevantTeamIds for ${userId}: ${sdkError.message}`
-    );
-    throw sdkError;
-  }
-};
-
-/**
  * Adds or removes a user from a specific relevant team.
  * @param {object} params - Parameters object.
  * @param {Teams} params.teamsSdk - Initialized Appwrite Teams SDK.
@@ -79,7 +47,7 @@ export const updateTeamMembership = async ({
           `User ${userId} is already a member of team ${teamId}.`
         );
       }
-      console.error(
+      error(
         `SDK Error adding user ${userId} to team ${teamId}: ${addError.message}`
       );
       throw addError; // Re-throw other SDK errors
@@ -108,7 +76,7 @@ export const updateTeamMembership = async ({
       if (removeError instanceof NotFoundError) {
         throw removeError;
       }
-      console.error(
+      error(
         `SDK Error removing user ${userId} from team ${teamId}: ${removeError.message}`
       );
       throw removeError; // Re-throw other SDK errors
