@@ -9,6 +9,7 @@ import {
 export default async ({ req, res, log, error }) => {
     const start = Date.now();
     const userId = req.headers['x-appwrite-user-id'] ?? 'unknown';
+    let action = 'unknown'; // Initialize with default value
 
     log(`Invocation Start. User ID: ${userId}. Method: ${req.method}. Path: ${req.path}.`);
 
@@ -16,7 +17,9 @@ export default async ({ req, res, log, error }) => {
         await authorizeRequest(userId);
         log(`User ${userId} authorized.`);
 
-        const { action, payload } = parseAndValidateRequest(req);
+        const parsedRequest = parseAndValidateRequest(req);
+        action = parsedRequest.action; // Update action variable
+        const payload = parsedRequest.payload;
         log(`Action: ${action}. Payload keys: ${Object.keys(payload || {}).join(', ')}`);
 
         const resultData = await routeAndExecuteAction({

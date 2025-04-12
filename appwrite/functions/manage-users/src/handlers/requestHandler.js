@@ -8,32 +8,19 @@ import { updateTeamMembership } from '../services/teamsService.js';
  * Parses the request body and validates the basic action/payload structure.
  * @param {object} req - The Appwrite request object.
  * @returns {{action: string, payload: object}} - The validated action and payload.
- * @throws {BadRequestError} - If parsing fails or structure is invalid.
- * @throws {SyntaxError} - If JSON parsing fails (will be caught by main handler).
+ * @throws {BadRequestError} - If structure is invalid.
  */
 export function parseAndValidateRequest(req) {
-  let requestPayload;
-  if (typeof req.body === 'string' && req.body.trim().length > 0) {
-    requestPayload = JSON.parse(req.body);
-  } else if (typeof req.body === 'object' && req.body !== null) {
-    requestPayload = req.body;
-  } else {
-    throw new BadRequestError('Request body is empty or invalid.');
-  }
-
-  if (!requestPayload || typeof requestPayload !== 'object') {
-    throw new BadRequestError('Parsed request body is not a valid object.');
-  }
-
-  const { action, payload } = requestPayload;
-
+  // Appwrite already parses the body for us
+  const requestBody = req.body || {};
+  
+  // Simple validation of required fields
+  const { action, payload = {} } = requestBody;
+  
   if (!action) {
-    throw new BadRequestError('Invalid request: "action" is required.');
+    throw new BadRequestError('Missing required field: "action"');
   }
-  if (typeof payload !== 'object' || payload === null) {
-    throw new BadRequestError('Invalid request: "payload" object is required.');
-  }
-
+  
   return { action, payload };
 }
 
@@ -51,14 +38,9 @@ export async function routeAndExecuteAction({ action, payload }) {
       return await fetchUsers({ payload });
 
     case 'updateTeamMembership':
-      if (
-        !payload.userId ||
-        !payload.teamId ||
-        typeof payload.add !== 'boolean'
-      ) {
-        throw new BadRequestError(
-          'Invalid updateTeamMembership payload: Requires userId, teamId, add.'
-        );
+      // Validate required fields for this specific action
+      if (!payload.userId || !payload.teamId || typeof payload.add !== 'boolean') {
+        throw new BadRequestError('For updateTeamMembership: userId, teamId, and add (boolean) are required');
       }
       return await updateTeamMembership({ payload });
 
