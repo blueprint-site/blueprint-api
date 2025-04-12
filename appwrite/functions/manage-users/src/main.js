@@ -52,35 +52,29 @@ export default async ({ req, res, log, error }) => {
 
   // --- 3. Handle Request Body (Check if Pre-Parsed) ---
   let action, payload;
-  let body = {}; // Default to empty object
+  let body = {};
 
   try {
-    // Check the type of req.body
     if (typeof req.body === 'string' && req.body.trim().length > 0) {
-      // If it's a non-empty string, parse it
       log('Request body received as string, parsing...');
       body = JSON.parse(req.body);
     } else if (typeof req.body === 'object' && req.body !== null) {
-      // If it's already a non-null object, use it directly
       log('Request body received as object (pre-parsed).');
       body = req.body;
     } else {
-      // If it's empty, null, or other type, log a warning
       log(`Request body is empty or has unexpected type: ${typeof req.body}`);
     }
 
-    // Extract action and payload from the resolved body object
     action = body.action;
     payload = body.payload;
 
-    // Validate that action exists *after* processing the body
     if (!action) {
       throw new Error('Missing "action" in request body.');
     }
-    log(`Action: ${action}, Payload: ${JSON.stringify(payload)}`); // Log extracted action/payload
+    log(`Action: ${action}, Payload: ${JSON.stringify(payload)}`);
   } catch (handleBodyError) {
     error(`Failed to handle request body: ${handleBodyError.message}`);
-    error(`Raw request body type: ${typeof req.body}, value: ${req.body}`); // Log raw body info on error
+    error(`Raw request body type: ${typeof req.body}, value: ${req.body}`);
     return res.json(
       { success: false, message: 'Invalid request format.' },
       400
@@ -171,8 +165,11 @@ export default async ({ req, res, log, error }) => {
           try {
             const result = await teamsAdmin.createMembership(
               teamId,
-              userId,
+              null,
               ['member'],
+              'https://placeholder.url/team-invite',
+              null,
+              userId
             );
             log(
               `Added user ${userId} to team ${teamId} (Membership ID: ${result.$id})`
