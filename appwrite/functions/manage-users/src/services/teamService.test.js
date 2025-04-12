@@ -15,7 +15,7 @@ jest.mock('../utils/config', () => ({
     adminTeamId: 'admin-team-id',
     betaTesterTeamId: 'beta-tester-id',
     MEMBERSHIP_REDIRECT_URL: 'https://example.com',
-  }
+  },
 }));
 
 // Mock dependencies
@@ -23,13 +23,13 @@ jest.mock('../../src/utils/appwrite', () => ({
   appwrite: {
     teamsSdk: {
       createMembership: jest.fn(),
-      deleteMembership: jest.fn()
-    }
-  }
+      deleteMembership: jest.fn(),
+    },
+  },
 }));
 
 jest.mock('../../src/services/userService', () => ({
-  getUserMemberships: jest.fn()
+  getUserMemberships: jest.fn(),
 }));
 
 describe('teamsService', () => {
@@ -52,12 +52,12 @@ describe('teamsService', () => {
         invited: '2023-01-20T12:00:00.000+00:00',
         joined: null,
         confirm: true,
-        roles: ['member']
+        roles: ['member'],
       });
 
       // Execute
       const result = await updateTeamMembership({
-        payload: { userId: 'user1', teamId: 'team1', add: true }
+        payload: { userId: 'user1', teamId: 'team1', add: true },
       });
 
       // Verify
@@ -71,17 +71,17 @@ describe('teamsService', () => {
       const conflictError = {
         response: {
           code: 409,
-          message: 'User with the requested email already exists in this team'
-        }
+          message: 'User with the requested email already exists in this team',
+        },
       };
       appwrite.teamsSdk.createMembership.mockRejectedValue(conflictError);
 
       // Execute & Verify
-      await expect(updateTeamMembership({
-        payload: { userId: 'user1', teamId: 'team1', add: true }
-      }))
-        .rejects
-        .toBeInstanceOf(ConflictError);
+      await expect(
+        updateTeamMembership({
+          payload: { userId: 'user1', teamId: 'team1', add: true },
+        })
+      ).rejects.toBeInstanceOf(ConflictError);
     });
 
     it('should remove a user from a team', async () => {
@@ -93,14 +93,14 @@ describe('teamsService', () => {
           $updatedAt: '2023-01-15T06:38:00.000+00:00',
           userId: 'user1',
           teamId: 'team1',
-          teamName: 'Developers'
-        }
+          teamName: 'Developers',
+        },
       ]);
       appwrite.teamsSdk.deleteMembership.mockResolvedValue({});
 
       // Execute
       const result = await updateTeamMembership({
-        payload: { userId: 'user1', teamId: 'team1', add: false }
+        payload: { userId: 'user1', teamId: 'team1', add: false },
       });
 
       // Verify

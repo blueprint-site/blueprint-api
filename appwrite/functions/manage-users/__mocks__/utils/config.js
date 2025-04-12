@@ -11,4 +11,4 @@ export const config = {
 // Individual exports for direct imports
 export const adminTeamId = 'admin-team-id';
 export const betaTesterTeamId = 'beta-tester-id';
-export const MEMBERSHIP_REDIRECT_URL = 'https://example.com'
+export const MEMBERSHIP_REDIRECT_URL = 'https://example.com';

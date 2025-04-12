@@ -3,7 +3,7 @@ export const Client = jest.fn().mockImplementation(() => {
   return {
     setEndpoint: jest.fn().mockReturnThis(),
     setProject: jest.fn().mockReturnThis(),
-    setKey: jest.fn().mockReturnThis()
+    setKey: jest.fn().mockReturnThis(),
   };
 });
 
@@ -12,31 +12,31 @@ export const Users = jest.fn().mockImplementation(() => {
     list: jest.fn().mockResolvedValue({
       total: 2,
       users: [
-        { 
-          $id: 'user1', 
+        {
+          $id: 'user1',
           $createdAt: '2023-01-15T06:38:00.000+00:00',
           $updatedAt: '2023-01-15T06:38:00.000+00:00',
-          name: 'Test User 1', 
+          name: 'Test User 1',
           email: 'user1@example.com',
           status: true,
           emailVerification: true,
           phoneVerification: false,
-          labels: ['developer']
+          labels: ['developer'],
         },
-        { 
-          $id: 'user2', 
+        {
+          $id: 'user2',
           $createdAt: '2023-01-16T09:42:00.000+00:00',
           $updatedAt: '2023-01-16T09:42:00.000+00:00',
-          name: 'Test User 2', 
+          name: 'Test User 2',
           email: 'user2@example.com',
           status: true,
           emailVerification: true,
           phoneVerification: false,
-          labels: ['tester']
-        }
-      ]
+          labels: ['tester'],
+        },
+      ],
     }),
-    
+
     listMemberships: jest.fn().mockResolvedValue({
       total: 2,
       memberships: [
@@ -52,7 +52,7 @@ export const Users = jest.fn().mockImplementation(() => {
           invited: '2023-01-15T06:38:00.000+00:00',
           joined: '2023-01-15T06:38:00.000+00:00',
           confirm: false,
-          roles: ['developer']
+          roles: ['developer'],
         },
         {
           $id: 'membership2',
@@ -66,10 +66,10 @@ export const Users = jest.fn().mockImplementation(() => {
           invited: '2023-01-15T06:40:00.000+00:00',
           joined: '2023-01-15T06:40:00.000+00:00',
           confirm: false,
-          roles: ['owner']
-        }
-      ]
-    })
+          roles: ['owner'],
+        },
+      ],
+    }),
   };
 });
 
@@ -87,24 +87,24 @@ export const Teams = jest.fn().mockImplementation(() => {
       invited: '2023-01-20T12:00:00.000+00:00',
       joined: null,
       confirm: true,
-      roles: ['member']
+      roles: ['member'],
     }),
-    
+
     deleteMembership: jest.fn().mockResolvedValue({}),
-    
+
     get: jest.fn().mockResolvedValue({
       $id: 'team1',
       $createdAt: '2023-01-10T06:38:00.000+00:00',
       $updatedAt: '2023-01-15T09:42:00.000+00:00',
       name: 'Developers',
       total: 3,
-      prefs: {}
-    })
+      prefs: {},
+    }),
   };
 });
 
 export const Query = {
   search: jest.fn().mockReturnValue('search-query'),
   limit: jest.fn().mockReturnValue('limit-query'),
-  offset: jest.fn().mockReturnValue('offset-query')
+  offset: jest.fn().mockReturnValue('offset-query'),
 };

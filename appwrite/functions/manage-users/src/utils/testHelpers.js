@@ -11,10 +11,16 @@ export function createMockUser(id, name, email, options = {}) {
     name: name,
     email: email,
     status: options.status !== undefined ? options.status : true,
-    emailVerification: options.emailVerification !== undefined ? options.emailVerification : true,
-    phoneVerification: options.phoneVerification !== undefined ? options.phoneVerification : false,
+    emailVerification:
+      options.emailVerification !== undefined
+        ? options.emailVerification
+        : true,
+    phoneVerification:
+      options.phoneVerification !== undefined
+        ? options.phoneVerification
+        : false,
     labels: options.labels || [],
-    prefs: options.prefs || {}
+    prefs: options.prefs || {},
   };
 }
 
@@ -34,7 +40,7 @@ export function createMockMembership(userId, teamId, options = {}) {
     invited: options.invited || '2023-01-15T06:38:00.000+00:00',
     joined: options.joined || '2023-01-15T06:38:00.000+00:00',
     confirm: options.confirm !== undefined ? options.confirm : false,
-    roles: options.roles || ['member']
+    roles: options.roles || ['member'],
   };
 }
 
@@ -48,7 +54,7 @@ export function createMockTeam(id, name, options = {}) {
     $updatedAt: options.updatedAt || '2023-01-15T06:38:00.000+00:00',
     name: name,
     total: options.total || 1,
-    prefs: options.prefs || {}
+    prefs: options.prefs || {},
   };
 }
 
@@ -58,7 +64,7 @@ export function createMockTeam(id, name, options = {}) {
 export function createMockUsersList(users = []) {
   return {
     total: users.length,
-    users: users
+    users: users,
   };
 }
 
@@ -68,6 +74,6 @@ export function createMockUsersList(users = []) {
 export function createMockMembershipsList(memberships = []) {
   return {
     total: memberships.length,
-    memberships: memberships
+    memberships: memberships,
   };
 }

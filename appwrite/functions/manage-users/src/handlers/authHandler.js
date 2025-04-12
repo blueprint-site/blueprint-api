@@ -12,11 +12,9 @@ const { adminTeamId } = config;
  * @param {object} context - Dependencies needed for authorization.
  * @throws {ForbiddenError} - If the user is not authorized.
  */
-export const authorizeRequest = async (
-  userId,
-) => {
+export const authorizeRequest = async (userId) => {
   const teams = await getUserMemberships(userId);
-  const isAdmin = teams.some(team => team.$id === adminTeamId);
+  const isAdmin = teams.some((team) => team.$id === adminTeamId);
 
   if (!isAdmin) {
     throw new ForbiddenError(`User ${userId} is not authorized.`);

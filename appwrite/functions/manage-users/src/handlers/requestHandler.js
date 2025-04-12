@@ -13,14 +13,14 @@ import { updateTeamMembership } from '../services/teamsService.js';
 export function parseAndValidateRequest(req) {
   // Appwrite already parses the body for us
   const requestBody = req.body || {};
-  
+
   // Simple validation of required fields
   const { action, payload = {} } = requestBody;
-  
+
   if (!action) {
     throw new BadRequestError('Missing required field: "action"');
   }
-  
+
   return { action, payload };
 }
 
@@ -39,8 +39,14 @@ export async function routeAndExecuteAction({ action, payload }) {
 
     case 'updateTeamMembership':
       // Validate required fields for this specific action
-      if (!payload.userId || !payload.teamId || typeof payload.add !== 'boolean') {
-        throw new BadRequestError('For updateTeamMembership: userId, teamId, and add (boolean) are required');
+      if (
+        !payload.userId ||
+        !payload.teamId ||
+        typeof payload.add !== 'boolean'
+      ) {
+        throw new BadRequestError(
+          'For updateTeamMembership: userId, teamId, and add (boolean) are required'
+        );
       }
       return await updateTeamMembership({ payload });
 

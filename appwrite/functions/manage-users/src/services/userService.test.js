@@ -7,9 +7,9 @@ jest.mock('../../src/utils/appwrite', () => ({
   appwrite: {
     usersSdk: {
       list: jest.fn(),
-      listMemberships: jest.fn()
-    }
-  }
+      listMemberships: jest.fn(),
+    },
+  },
 }));
 
 describe('userService', () => {
@@ -29,7 +29,7 @@ describe('userService', () => {
             $updatedAt: '2023-01-15T06:38:00.000+00:00',
             name: 'Test User 1',
             email: 'user1@example.com',
-            status: true
+            status: true,
           },
           {
             $id: 'user2',
@@ -37,9 +37,9 @@ describe('userService', () => {
             $updatedAt: '2023-01-16T09:42:00.000+00:00',
             name: 'Test User 2',
             email: 'user2@example.com',
-            status: true
-          }
-        ]
+            status: true,
+          },
+        ],
       };
 
       const mockMemberships = {
@@ -52,9 +52,9 @@ describe('userService', () => {
             userId: 'user1',
             teamId: 'team1',
             teamName: 'Developers',
-            roles: ['member']
-          }
-        ]
+            roles: ['member'],
+          },
+        ],
       };
 
       appwrite.usersSdk.list.mockResolvedValue(mockUserList);
@@ -62,7 +62,7 @@ describe('userService', () => {
 
       // Execute
       const result = await fetchUsers({
-        payload: { search: 'test', limit: 10, offset: 0 }
+        payload: { search: 'test', limit: 10, offset: 0 },
       });
 
       // Verify
@@ -89,7 +89,7 @@ describe('userService', () => {
             userId: 'user1',
             teamId: 'team1',
             teamName: 'Developers',
-            roles: ['member']
+            roles: ['member'],
           },
           {
             $id: 'membership2',
@@ -98,9 +98,9 @@ describe('userService', () => {
             userId: 'user1',
             teamId: 'adminTeamId',
             teamName: 'Administrators',
-            roles: ['owner']
-          }
-        ]
+            roles: ['owner'],
+          },
+        ],
       };
 
       appwrite.usersSdk.listMemberships.mockResolvedValue(mockMemberships);
