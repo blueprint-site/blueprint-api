@@ -138,8 +138,6 @@ export default async ({ req, res, log, error }) => {
           success: true,
           data: { total: userList.total, documents: enrichedUsers },
         });
-        // Note: We still return the data under 'documents' key for consistency
-        // with the frontend hook expectation, even if we read from userList.users.
       }
 
       case 'updateTeamMembership': {
@@ -158,15 +156,16 @@ export default async ({ req, res, log, error }) => {
         if (add) {
           try {
             log(
-              `Calling createMembership with: teamId=${teamId}, email=null, roles=['member'], url='https://placeholder.url/team-invite', name=null, userId=${userId}`
+              `Calling createMembership with: teamId=${teamId}, roles=[], email=null, userId=${userId}, phone=null url='https://blueprint-create.com', name=null`
             );
             const result = await teamsAdmin.createMembership(
               teamId,
-              ['member'],
+              [],
               null,
               userId,
               null,
-              'https://blueprint-create.com'
+              'https://blueprint-create.com',
+              null
             );
             log(
               `Added user ${userId} to team ${teamId} (Membership ID: ${result.$id})`
