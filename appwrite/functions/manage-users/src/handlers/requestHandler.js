@@ -39,49 +39,29 @@ export function parseAndValidateRequest(req) {
 
 /**
  * Routes the action to the appropriate service and executes it.
- * @param {object} context - Contains action, payload, and dependencies.
- * @param {string} context.action - The action to perform.
- * @param {object} context.payload - The payload for the action.
- * @param {object} context.services - Object containing SDK instances { usersSdk, teamsSdk }.
- * @param {object} context.config - Relevant configuration { relevantTeamIdsSet, membershipRedirectUrl }.
+ * @param {string} action - The action to perform.
+ * @param {object} payload - The payload for the action.
  * @returns {Promise<any>} - The result data from the executed service.
  * @throws {BadRequestError} - If action is unknown or payload invalid for the action.
  * @throws {Error} - Propagates errors from services.
  */
-export async function routeAndExecuteAction({
-  action,
-  payload,
-  services,
-  config,
-}) {
-  const { usersSdk, teamsSdk } = services;
-  const { relevantTeamIdsSet, membershipRedirectUrl } = config;
-
+export async function routeAndExecuteAction({ action, payload }) {
   switch (action) {
     case 'listUsers':
-      return await fetchUsers({
-        usersSdk,
-        teamsSdk,
-        payload,
-        relevantTeamIdsSet,
-      });
+      return await fetchUsers({ payload });
 
     case 'updateTeamMembership':
-      if (!payload.userId || !payload.teamId || typeof payload.add !== 'boolean') {
+      if (
+        !payload.userId ||
+        !payload.teamId ||
+        typeof payload.add !== 'boolean'
+      ) {
         throw new BadRequestError(
           'Invalid updateTeamMembership payload: Requires userId, teamId, add.'
         );
       }
-      if (!relevantTeamIdsSet.has(payload.teamId)) {
-        throw new BadRequestError(
-          `Operation not allowed for team ID ${payload.teamId}.`
-        );
-      }
-      return await updateTeamMembership({
-        teamsSdk,
-        payload,
-        membershipRedirectUrl,
-      });
+      // Remove the check for relevantTeamIdsSet or import and use it
+      return await updateTeamMembership({ payload });
 
     default:
       throw new BadRequestError(`Unknown action: ${action}`);

@@ -1,22 +1,22 @@
 // src/handlers/authHandler.js
 
 import { ForbiddenError } from '../utils/errors.js';
-import { getUserRelevantTeamIds } from '../services/teamsService.js';
+import { getUserTeams } from '../services/userService.js';
+import { adminTeamId } from '../utils/config.js';
 
 /**
  * Checks if the invoking user is authorized (is an admin).
- * @param {string} invokingUserId - The ID of the user invoking the function.
+ * @param {string} userId - The ID of the user invoking the function.
  * @param {object} context - Dependencies needed for authorization.
- * @param {Teams} context.teamsSdk - Initialized Appwrite Teams SDK.
- * @param {Set<string>} context.relevantTeamIdsSet - Set of relevant team IDs.
- * @param {string} context.adminTeamId - The ID of the admin team.
  * @throws {ForbiddenError} - If the user is not authorized.
  */
-export const authorizeRequest = async (invokingUserId, { teamsSdk, relevantTeamIdsSet, adminTeamId }) => {
-    const invokerTeams = await getUserRelevantTeamIds(teamsSdk, relevantTeamIdsSet, invokingUserId);
+export const authorizeRequest = async (
+  userId,
+) => {
+  const teams = await getUserTeams(userId);
+  const isAdmin = teams.some(team => team.$id === adminTeamId);
 
-    if (!invokerTeams.includes(adminTeamId)) {
-        throw new ForbiddenError(`User ${invokingUserId} is not authorized.`);
-    }
-    // If no error is thrown, the user is considered authorized.
+  if (!isAdmin) {
+    throw new ForbiddenError(`User ${userId} is not authorized.`);
+  }
 };
