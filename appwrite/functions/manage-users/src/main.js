@@ -165,11 +165,10 @@ export default async ({ req, res, log, error }) => {
           try {
             const result = await teamsAdmin.createMembership(
               teamId,
-              null,
               ['member'],
-              'https://placeholder.url/team-invite',
               null,
-              userId
+              userId,
+              'https://blueprint-create.com',
             );
             log(
               `Added user ${userId} to team ${teamId} (Membership ID: ${result.$id})`
