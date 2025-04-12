@@ -30,12 +30,10 @@ export const listUsersWithTeams = async ({
     listQueries.push(Query.limit(limit));
     listQueries.push(Query.offset(offset));
 
-    // Let SDK errors propagate
     const userListResult = await usersSdk.list(listQueries);
 
     const usersArray = userListResult.users;
     if (!Array.isArray(usersArray)) {
-        // Throw an error if the structure is wrong
         console.error("Unexpected user list structure:", userListResult);
         throw new Error('Internal error: Failed to retrieve expected user list data structure.');
     }
@@ -46,7 +44,6 @@ export const listUsersWithTeams = async ({
 
     const enrichedUsers = await Promise.all(
         usersArray.map(async (user) => {
-            // Let errors from getUserRelevantTeamIds propagate
             const teamIds = await getUserRelevantTeamIds(teamsSdk, relevantTeamIdsSet, user.$id);
             return {
                 $id: user.$id,
@@ -57,6 +54,5 @@ export const listUsersWithTeams = async ({
         })
     );
 
-    // Return the data structure expected by the handler
     return { total: userListResult.total, users: enrichedUsers };
 };

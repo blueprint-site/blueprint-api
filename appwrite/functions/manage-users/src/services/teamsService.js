@@ -11,25 +11,28 @@ import { ConflictError, NotFoundError } from '../utils/errors.js'; // Import cus
  * @returns {Promise<string[]>} - Array of relevant team IDs.
  * @throws {Error} - Throws if the Appwrite SDK call fails unexpectedly.
  */
-export const getUserRelevantTeamIds = async (teamsSdk, relevantTeamIdsSet, userId) => {
-    // No 'error' param needed, let errors propagate for the handler to catch
-    try {
-         const response = await teamsSdk.listMemberships(undefined, [
-            Query.equal('userId', [userId]),
-            Query.limit(100),
-        ]);
+export const getUserRelevantTeamIds = async (
+  teamsSdk,
+  relevantTeamIdsSet,
+  userId
+) => {
+  try {
+    const response = await teamsSdk.listMemberships(undefined, [
+      Query.equal('userId', [userId]),
+      Query.limit(100),
+    ]);
 
-        const userTeamIds = response.memberships
-            .map(membership => membership.teamId)
-            .filter(teamId => relevantTeamIdsSet.has(teamId));
+    const userTeamIds = response.memberships
+      .map((membership) => membership.teamId)
+      .filter((teamId) => relevantTeamIdsSet.has(teamId));
 
-        return userTeamIds;
-    } catch(sdkError) {
-        // Could wrap the error here if needed, but often just letting it
-        // propagate to the main handler (which logs it) is fine.
-        console.error(`SDK Error in getUserRelevantTeamIds for ${userId}: ${sdkError.message}`);
-        throw sdkError; // Re-throw original error
-    }
+    return userTeamIds;
+  } catch (sdkError) {
+    console.error(
+      `SDK Error in getUserRelevantTeamIds for ${userId}: ${sdkError.message}`
+    );
+    throw sdkError;
+  }
 };
 
 /**
@@ -44,53 +47,71 @@ export const getUserRelevantTeamIds = async (teamsSdk, relevantTeamIdsSet, userI
  * @throws {Error} - For other SDK errors.
  */
 export const updateTeamMembership = async ({
-    teamsSdk,
-    payload,
-    membershipRedirectUrl,
+  teamsSdk,
+  payload,
+  membershipRedirectUrl,
 }) => {
-    // Input validation (userId, teamId, add) should ideally happen in the main handler
-    // before calling the service, but keeping basic check here for robustness.
-    const { userId, teamId, add } = payload ?? {};
-    if (!userId || !teamId || typeof add !== 'boolean') {
-       throw new Error('Internal validation failed: Invalid payload passed to updateTeamMembership service.');
-       // Or throw new BadRequestError('Invalid input: Missing or invalid userId, teamId, or add flag.'); if service handles validation
+  const { userId, teamId, add } = payload ?? {};
+  if (!userId || !teamId || typeof add !== 'boolean') {
+    throw new Error(
+      'Internal validation failed: Invalid payload passed to updateTeamMembership service.'
+    );
+  }
+
+  if (add) {
+    try {
+      const result = await teamsSdk.createMembership(
+        teamId,
+        [],
+        undefined,
+        userId,
+        undefined,
+        membershipRedirectUrl,
+        undefined
+      );
+      return {
+        message: `User ${userId} added to team ${teamId} (Membership ID: ${result.$id}).`,
+      };
+    } catch (addError) {
+      if (addError?.response?.code === 409) {
+        // Throw a specific error the handler can catch
+        throw new ConflictError(
+          `User ${userId} is already a member of team ${teamId}.`
+        );
+      }
+      console.error(
+        `SDK Error adding user ${userId} to team ${teamId}: ${addError.message}`
+      );
+      throw addError; // Re-throw other SDK errors
     }
+  } else {
+    try {
+      const membershipsList = await teamsSdk.listMemberships(teamId, [
+        Query.equal('userId', [userId]),
+        Query.limit(1),
+      ]);
 
-    if (add) {
-        try {
-            const result = await teamsSdk.createMembership(
-                teamId, [], undefined, userId, undefined, membershipRedirectUrl, undefined
-            );
-            return { message: `User ${userId} added to team ${teamId} (Membership ID: ${result.$id}).` };
-        } catch (addError) {
-            if (addError?.response?.code === 409) {
-                // Throw a specific error the handler can catch
-                throw new ConflictError(`User ${userId} is already a member of team ${teamId}.`);
-            }
-            console.error(`SDK Error adding user ${userId} to team ${teamId}: ${addError.message}`);
-            throw addError; // Re-throw other SDK errors
-        }
-    } else {
-        try {
-            const membershipsList = await teamsSdk.listMemberships(teamId, [
-                Query.equal('userId', [userId]), Query.limit(1),
-            ]);
+      if (membershipsList.total === 0) {
+        // Throw specific error
+        throw new NotFoundError(
+          `User ${userId} was not found in team ${teamId}.`
+        );
+      }
 
-            if (membershipsList.total === 0) {
-                // Throw specific error
-                throw new NotFoundError(`User ${userId} was not found in team ${teamId}.`);
-            }
-
-            const membershipId = membershipsList.memberships[0].$id;
-            await teamsSdk.deleteMembership(teamId, membershipId);
-            return { message: `User ${userId} removed from team ${teamId} (membership ${membershipId}).` };
-        } catch (removeError) {
-            // Handle NotFoundError thrown above, or let it propagate
-             if (removeError instanceof NotFoundError) {
-                throw removeError;
-            }
-            console.error(`SDK Error removing user ${userId} from team ${teamId}: ${removeError.message}`);
-            throw removeError; // Re-throw other SDK errors
-        }
+      const membershipId = membershipsList.memberships[0].$id;
+      await teamsSdk.deleteMembership(teamId, membershipId);
+      return {
+        message: `User ${userId} removed from team ${teamId} (membership ${membershipId}).`,
+      };
+    } catch (removeError) {
+      // Handle NotFoundError thrown above, or let it propagate
+      if (removeError instanceof NotFoundError) {
+        throw removeError;
+      }
+      console.error(
+        `SDK Error removing user ${userId} from team ${teamId}: ${removeError.message}`
+      );
+      throw removeError; // Re-throw other SDK errors
     }
+  }
 };

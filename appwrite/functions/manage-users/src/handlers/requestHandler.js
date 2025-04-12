@@ -13,29 +13,29 @@ import { updateTeamMembership } from '../services/teamService.js';
  * @throws {SyntaxError} - If JSON parsing fails (will be caught by main handler).
  */
 export function parseAndValidateRequest(req) {
-    let requestPayload;
-    if (typeof req.body === 'string' && req.body.trim().length > 0) {
-        requestPayload = JSON.parse(req.body); // Can throw SyntaxError
-    } else if (typeof req.body === 'object' && req.body !== null) {
-        requestPayload = req.body;
-    } else {
-        throw new BadRequestError('Request body is empty or invalid.');
-    }
+  let requestPayload;
+  if (typeof req.body === 'string' && req.body.trim().length > 0) {
+    requestPayload = JSON.parse(req.body); // Can throw SyntaxError
+  } else if (typeof req.body === 'object' && req.body !== null) {
+    requestPayload = req.body;
+  } else {
+    throw new BadRequestError('Request body is empty or invalid.');
+  }
 
-    if (!requestPayload || typeof requestPayload !== 'object') {
-        throw new BadRequestError('Parsed request body is not a valid object.');
-    }
+  if (!requestPayload || typeof requestPayload !== 'object') {
+    throw new BadRequestError('Parsed request body is not a valid object.');
+  }
 
-    const { action, payload } = requestPayload;
+  const { action, payload } = requestPayload;
 
-    if (!action) {
-        throw new BadRequestError('Invalid request: "action" is required.');
-    }
-    if (typeof payload !== 'object' || payload === null) {
-        throw new BadRequestError('Invalid request: "payload" object is required.');
-    }
+  if (!action) {
+    throw new BadRequestError('Invalid request: "action" is required.');
+  }
+  if (typeof payload !== 'object' || payload === null) {
+    throw new BadRequestError('Invalid request: "payload" object is required.');
+  }
 
-    return { action, payload };
+  return { action, payload };
 }
 
 /**
@@ -49,33 +49,48 @@ export function parseAndValidateRequest(req) {
  * @throws {BadRequestError} - If action is unknown or payload invalid for the action.
  * @throws {Error} - Propagates errors from services.
  */
-export async function routeAndExecuteAction({ action, payload, services, config }) {
-    const { usersSdk, teamsSdk } = services;
-    const { relevantTeamIdsSet, membershipRedirectUrl } = config;
+export async function routeAndExecuteAction({
+  action,
+  payload,
+  services,
+  config,
+}) {
+  const { usersSdk, teamsSdk } = services;
+  const { relevantTeamIdsSet, membershipRedirectUrl } = config;
 
-    switch (action) {
-        case 'listUsers':
-            // listUsersWithTeams doesn't need action-specific validation here,
-            // it uses the payload directly for limit/offset/search.
-            return await listUsersWithTeams({
-                usersSdk, teamsSdk, payload, relevantTeamIdsSet,
-            });
+  switch (action) {
+    case 'listUsers':
+      return await listUsersWithTeams({
+        usersSdk,
+        teamsSdk,
+        payload,
+        relevantTeamIdsSet,
+      });
 
-        case 'updateTeamMembership':
-            // Perform action-specific validation before calling service
-            if (!payload.userId || !payload.teamId || typeof payload.add !== 'boolean') {
-                throw new BadRequestError('Invalid updateTeamMembership payload: Requires userId, teamId, add.');
-            }
-            if (!relevantTeamIdsSet.has(payload.teamId)) {
-                throw new BadRequestError(`Operation not allowed for team ID ${payload.teamId}.`);
-            }
-            return await updateTeamMembership({
-                teamsSdk, payload, membershipRedirectUrl,
-            });
+    case 'updateTeamMembership':
+      if (
+        !payload.userId ||
+        !payload.teamId ||
+        typeof payload.add !== 'boolean'
+      ) {
+        throw new BadRequestError(
+          'Invalid updateTeamMembership payload: Requires userId, teamId, add.'
+        );
+      }
+      if (!relevantTeamIdsSet.has(payload.teamId)) {
+        throw new BadRequestError(
+          `Operation not allowed for team ID ${payload.teamId}.`
+        );
+      }
+      return await updateTeamMembership({
+        teamsSdk,
+        payload,
+        membershipRedirectUrl,
+      });
 
-        default:
-            throw new BadRequestError(`Unknown action: ${action}`);
-    }
+    default:
+      throw new BadRequestError(`Unknown action: ${action}`);
+  }
 }
 
 /**
@@ -88,20 +103,21 @@ export async function routeAndExecuteAction({ action, payload, services, config 
  * @param {number} context.start - The timestamp when the request started.
  */
 export function handleErrorResponse({ e, action, res, errorLogger, start }) {
-    const duration = Date.now() - start;
-    let statusCode = 500;
-    let message = 'An internal error occurred.';
+  const duration = Date.now() - start;
+  let statusCode = 500;
+  let message = 'An internal error occurred.';
 
-    if (e instanceof HttpError) {
-        statusCode = e.statusCode;
-        message = e.message;
-    } else if (e instanceof SyntaxError && e.message.includes('JSON')) {
-        statusCode = 400;
-        message = 'Invalid JSON format in request body.';
-    }
-    // Add more specific error checks (e.g., Appwrite SDK errors) if needed
+  if (e instanceof HttpError) {
+    statusCode = e.statusCode;
+    message = e.message;
+  } else if (e instanceof SyntaxError && e.message.includes('JSON')) {
+    statusCode = 400;
+    message = 'Invalid JSON format in request body.';
+  }
 
-    errorLogger(`Action "${action}" failed after ${duration}ms. Status: ${statusCode}. Error: ${e.message}. Stack: ${e.stack || 'N/A'}`);
+  errorLogger(
+    `Action "${action}" failed after ${duration}ms. Status: ${statusCode}. Error: ${e.message}. Stack: ${e.stack || 'N/A'}`
+  );
 
-    return res.json({ success: false, message: message }, statusCode);
+  return res.json({ success: false, message: message }, statusCode);
 }
