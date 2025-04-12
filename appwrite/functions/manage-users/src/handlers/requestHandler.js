@@ -1,7 +1,7 @@
 // src/handlers/requestHandler.js
 
 import { HttpError, BadRequestError } from '../utils/errors.js';
-import { listUsersWithTeams } from '../services/userService.js';
+import { fetchUsers } from '../services/userService.js';
 import { updateTeamMembership } from '../services/teamsService.js';
 
 /**
@@ -14,7 +14,7 @@ import { updateTeamMembership } from '../services/teamsService.js';
 export function parseAndValidateRequest(req) {
   let requestPayload;
   if (typeof req.body === 'string' && req.body.trim().length > 0) {
-    requestPayload = JSON.parse(req.body); // Can throw SyntaxError
+    requestPayload = JSON.parse(req.body);
   } else if (typeof req.body === 'object' && req.body !== null) {
     requestPayload = req.body;
   } else {
@@ -59,7 +59,7 @@ export async function routeAndExecuteAction({
 
   switch (action) {
     case 'listUsers':
-      return await listUsersWithTeams({
+      return await fetchUsers({
         usersSdk,
         teamsSdk,
         payload,
@@ -67,11 +67,7 @@ export async function routeAndExecuteAction({
       });
 
     case 'updateTeamMembership':
-      if (
-        !payload.userId ||
-        !payload.teamId ||
-        typeof payload.add !== 'boolean'
-      ) {
+      if (!payload.userId || !payload.teamId || typeof payload.add !== 'boolean') {
         throw new BadRequestError(
           'Invalid updateTeamMembership payload: Requires userId, teamId, add.'
         );

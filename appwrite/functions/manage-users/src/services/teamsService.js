@@ -1,24 +1,18 @@
 // src/services/teamsService.js
-
-import { Query } from 'node-appwrite';
-import { ConflictError, NotFoundError } from '../utils/errors.js'; // Import custom errors
+import { ConflictError, NotFoundError } from '../utils/errors.js';
+import { MEMBERSHIP_REDIRECT_URL } from '../utils/config.js';
+import { getUserTeams } from './userService.js';
 
 /**
  * Adds or removes a user from a specific relevant team.
- * @param {object} params - Parameters object.
- * @param {Teams} params.teamsSdk - Initialized Appwrite Teams SDK.
- * @param {object} params.payload - Payload with userId, teamId, add flag.
- * @param {string} params.membershipRedirectUrl - URL for createMembership.
+ * @param {object} payload - Payload with userId, teamId, add flag.
+ * @param {Teams} teamsSdk - Initialized Appwrite Teams SDK.
  * @returns {Promise<{message: string}>} - Success message object.
  * @throws {ConflictError} - If user already in team when adding.
  * @throws {NotFoundError} - If user not in team when removing.
  * @throws {Error} - For other SDK errors.
  */
-export const updateTeamMembership = async ({
-  teamsSdk,
-  payload,
-  membershipRedirectUrl,
-}) => {
+export const updateTeamMembership = async ({ teamsSdk, payload }) => {
   const { userId, teamId, add } = payload ?? {};
   if (!userId || !teamId || typeof add !== 'boolean') {
     throw new Error(
@@ -34,7 +28,7 @@ export const updateTeamMembership = async ({
         undefined,
         userId,
         undefined,
-        membershipRedirectUrl,
+        MEMBERSHIP_REDIRECT_URL,
         undefined
       );
       return {
@@ -50,16 +44,13 @@ export const updateTeamMembership = async ({
       error(
         `SDK Error adding user ${userId} to team ${teamId}: ${addError.message}`
       );
-      throw addError; // Re-throw other SDK errors
+      throw addError;
     }
   } else {
     try {
-      const membershipsList = await teamsSdk.listMemberships(teamId, [
-        Query.equal('userId', [userId]),
-        Query.limit(1),
-      ]);
+      const teams = await getUserTeams(userId)
 
-      if (membershipsList.total === 0) {
+      if (teams.total === 0) {
         // Throw specific error
         throw new NotFoundError(
           `User ${userId} was not found in team ${teamId}.`

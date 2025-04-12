@@ -1,15 +1,12 @@
 // src/main.js
-
 import { config } from './utils/config.js';
 import { appwrite } from './utils/appwrite.js';
-
 import { authorizeRequest } from './handlers/authHandler.js';
 import {
     parseAndValidateRequest,
     routeAndExecuteAction,
     handleErrorResponse
 } from './handlers/requestHandler.js';
-
 const { usersSdk, teamsSdk } = appwrite;
 const { adminTeamId, MEMBERSHIP_REDIRECT_URL } = config;
 
