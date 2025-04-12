@@ -1,7 +1,6 @@
 // src/handlers/requestHandler.js
 
 import { HttpError, BadRequestError } from '../utils/errors.js';
-// Import services needed by the router
 import { listUsersWithTeams } from '../services/userService.js';
 import { updateTeamMembership } from '../services/teamService.js';
 
