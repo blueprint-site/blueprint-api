@@ -1,7 +1,7 @@
 // src/services/userService.js
 
 import { Query } from 'node-appwrite';
-import { getUserRelevantTeamIds } from './teamService.js'; // Still need this helper
+import { getUserRelevantTeamIds } from './teamsService.js';
 
 /**
  * Lists users, optionally filters, and enriches them with relevant team IDs.
@@ -14,45 +14,49 @@ import { getUserRelevantTeamIds } from './teamService.js'; // Still need this he
  * @throws {Error} - If SDK calls fail or unexpected structure received.
  */
 export const listUsersWithTeams = async ({
-    usersSdk,
-    teamsSdk,
-    payload,
-    relevantTeamIdsSet,
+  usersSdk,
+  teamsSdk,
+  payload,
+  relevantTeamIdsSet,
 }) => {
-    const listQueries = [];
-    const search = payload?.search;
-    const limit = parseInt(payload?.limit, 10) || 25;
-    const offset = parseInt(payload?.offset, 10) || 0;
+  const listQueries = [];
+  const search = payload?.search;
+  const limit = parseInt(payload?.limit, 10) || 25;
+  const offset = parseInt(payload?.offset, 10) || 0;
 
-    if (search) {
-        listQueries.push(Query.search('search', search));
-    }
-    listQueries.push(Query.limit(limit));
-    listQueries.push(Query.offset(offset));
+  if (search) {
+    listQueries.push(Query.search('search', search));
+  }
+  listQueries.push(Query.limit(limit));
+  listQueries.push(Query.offset(offset));
 
-    const userListResult = await usersSdk.list(listQueries);
+  const userListResult = await usersSdk.list(listQueries);
 
-    const usersArray = userListResult.users;
-    if (!Array.isArray(usersArray)) {
-        console.error("Unexpected user list structure:", userListResult);
-        throw new Error('Internal error: Failed to retrieve expected user list data structure.');
-    }
-
-    if (usersArray.length === 0) {
-        return { total: 0, users: [] }; // Return data structure
-    }
-
-    const enrichedUsers = await Promise.all(
-        usersArray.map(async (user) => {
-            const teamIds = await getUserRelevantTeamIds(teamsSdk, relevantTeamIdsSet, user.$id);
-            return {
-                $id: user.$id,
-                name: user.name,
-                email: user.email,
-                teamIds: teamIds,
-            };
-        })
+  const usersArray = userListResult.users;
+  if (!Array.isArray(usersArray)) {
+    console.error('Unexpected user list structure:', userListResult);
+    throw new Error(
+      'Internal error: Failed to retrieve expected user list data structure.'
     );
+  }
 
-    return { total: userListResult.total, users: enrichedUsers };
+  if (usersArray.length === 0) {
+    return { total: 0, users: [] }; // Return data structure
+  }
+
+  const userWithTeamIds = await Promise.all(
+    usersArray.map(async (user) => {
+      const teamIds = await getUserRelevantTeamIds(
+        teamsSdk,
+        relevantTeamIdsSet,
+        user.$id
+      );
+      return {
+        ...user,
+        teamIds: teamIds,
+      };
+    })
+  );
+
+  return { total: userListResult.total, users: userWithTeamIds };
 };

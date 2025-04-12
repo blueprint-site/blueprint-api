@@ -2,7 +2,7 @@
 
 import { HttpError, BadRequestError } from '../utils/errors.js';
 import { listUsersWithTeams } from '../services/userService.js';
-import { updateTeamMembership } from '../services/teamService.js';
+import { updateTeamMembership } from '../services/teamsService.js';
 
 /**
  * Parses the request body and validates the basic action/payload structure.
