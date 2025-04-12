@@ -173,7 +173,6 @@ export default async ({ req, res, log, error }) => {
               teamId,
               userId,
               ['member'],
-              'https://placeholder.url/team-invite'
             );
             log(
               `Added user ${userId} to team ${teamId} (Membership ID: ${result.$id})`
