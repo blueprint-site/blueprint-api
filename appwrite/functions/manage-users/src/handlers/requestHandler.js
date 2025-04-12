@@ -60,7 +60,6 @@ export async function routeAndExecuteAction({ action, payload }) {
           'Invalid updateTeamMembership payload: Requires userId, teamId, add.'
         );
       }
-      // Remove the check for relevantTeamIdsSet or import and use it
       return await updateTeamMembership({ payload });
 
     default:

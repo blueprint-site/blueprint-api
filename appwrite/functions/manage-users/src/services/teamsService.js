@@ -45,7 +45,7 @@ export const updateTeamMembership = async ({ payload }) => {
           `User ${userId} is already a member of team ${teamId}.`
         );
       }
-      error(
+      console.error(
         `SDK Error adding user ${userId} to team ${teamId}: ${addError.message}`
       );
       throw addError;
