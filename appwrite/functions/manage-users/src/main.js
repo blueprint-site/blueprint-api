@@ -95,15 +95,11 @@ export default async ({ req, res, log, error }) => {
         listQueries.push(Query.limit(limit));
         listQueries.push(Query.offset(offset));
 
-        // --- Execute the list call ---
         const userList = await usersAdmin.list(listQueries);
 
-        // --- Log the raw response for debugging ---
         log(`Response from users.list: ${JSON.stringify(userList)}`);
 
-        // --- Safely access the user array (handles SDK versions) ---
-        // Check for 'users' first (newer SDK), then 'documents' (older SDK)
-        const usersArray = userList.users || userList.documents;
+        const usersArray = userList.users;
 
         // --- Validate that we have an array ---
         if (!Array.isArray(usersArray)) {
@@ -126,10 +122,8 @@ export default async ({ req, res, log, error }) => {
           `Found ${usersArray.length} users in this batch (Total: ${userList.total}). Enriching...`
         );
 
-        // --- Enrich users (now using the safe 'usersArray') ---
         const enrichedUsers = await Promise.all(
           usersArray.map(async (user) => {
-            // Line 99 should now be safe
             const teamIds = await getUserTeamIds(
               teamsAdmin,
               user.$id,
@@ -163,7 +157,9 @@ export default async ({ req, res, log, error }) => {
 
         if (add) {
           try {
-            log(`Calling createMembership with: teamId=<span class="math-inline">{teamId}, email=null, roles=['member'], url='...', name=null, userId=</span>{userId}`);
+            log(
+              `Calling createMembership with: teamId=${teamId}, email=null, roles=['member'], url='https://placeholder.url/team-invite', name=null, userId=${userId}`
+            );
             const result = await teamsAdmin.createMembership(
               teamId,
               ['member'],
