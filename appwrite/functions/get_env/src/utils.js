@@ -10,7 +10,7 @@ const fs = require('fs');
 function throwIfMissing(obj, keys) {
   const missing = [];
   for (let key of keys) {
-    if (!(key in obj) || !obj[key]) {
+    if (!(key in obj) || obj[key] === undefined || obj[key] === null) {
       missing.push(key);
     }
   }
