@@ -16,7 +16,7 @@ export async function syncWithCleanup(databases, index, collectionName, log, for
   let totalDeleted = 0;
   
   // Get last sync time for incremental sync
-  const lastSyncTime = forceFullSync ? null : await getLastSyncTime(databases, index._uid, log);
+  const lastSyncTime = forceFullSync ? null : await getLastSyncTime(databases, index.uid, log);
   
   if (lastSyncTime) {
     log(`Performing incremental sync since ${lastSyncTime}`);
@@ -113,7 +113,7 @@ export async function syncWithCleanup(databases, index, collectionName, log, for
   }
   
   // Update the sync timestamp
-  await updateLastSyncTime(databases, index._uid, currentTime, log);
+  await updateLastSyncTime(databases, index.uid, currentTime, log);
   
   return { synced: totalSynced, deleted: totalDeleted };
 }
@@ -132,7 +132,7 @@ export async function syncSimple(databases, index, collectionName, log, forceFul
   let totalSynced = 0;
   
   // Get last sync time for incremental sync
-  const lastSyncTime = forceFullSync ? null : await getLastSyncTime(databases, index._uid, log);
+  const lastSyncTime = forceFullSync ? null : await getLastSyncTime(databases, index.uid, log);
   
   let cursor = null;
   do {
@@ -166,7 +166,7 @@ export async function syncSimple(databases, index, collectionName, log, forceFul
   } while (cursor !== null);
   
   // Update the sync timestamp
-  await updateLastSyncTime(databases, index._uid, currentTime, log);
+  await updateLastSyncTime(databases, index.uid, currentTime, log);
 
   return { synced: totalSynced, deleted: 0 };
 }
