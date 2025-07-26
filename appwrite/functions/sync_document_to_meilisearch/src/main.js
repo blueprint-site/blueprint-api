@@ -65,7 +65,7 @@ export default async ({ req, res, log, error }) => {
           const report = formatHealthReport(healthCheck);
           return res.text(report, 200, { 'Content-Type': 'text/plain; charset=utf-8' });
         }
-
+        context.log(healthCheck);
         return res.json(healthCheck, healthCheck.overall.status === 'healthy' ? 200 : 503);
       }
     }
