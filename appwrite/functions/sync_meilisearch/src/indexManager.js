@@ -14,13 +14,15 @@ export async function ensureIndexExists(meilisearch, indexName, log) {
   } catch (error) {
     if (error.code === 'index_not_found') {
       log(`Index '${indexName}' not found. Creating...`);
-      await meilisearch.createIndex(indexName, { primaryKey: '$id' });
+      await meilisearch.createIndex(indexName, { primaryKey: 'id' });
       log(`Index '${indexName}' created successfully.`);
     } else {
       throw error;
     }
   }
   
+  // After ensuring index exists, ensure all fields are returned in full
+  await meilisearch.index(indexName).updateSettings({ displayedAttributes: ['*'] });
   return meilisearch.index(indexName);
 }
 
@@ -34,18 +36,23 @@ export async function ensureIndexExists(meilisearch, indexName, log) {
  * @returns {Object} Sync results { synced, deleted }
  */
 export async function syncIndex(databases, meilisearch, config, log, forceFullSync = false) {
-  const { indexName, collectionName, hasObsoleteCleanup } = config;
+  const { indexName, collectionId, hasObsoleteCleanup } = config;
   
   log(`Starting sync for ${indexName}...`);
   
   // Ensure index exists
   const index = await ensureIndexExists(meilisearch, indexName, log);
+  // If full sync is forced, delete all existing documents in the index
+  if (forceFullSync) {
+    log(`🧹 Force full sync (wipe all) requested - deleting all existing documents`);
+    await index.deleteAllDocuments();
+  }
 
   if (hasObsoleteCleanup) {
     // Full sync with obsolete document cleanup
-    return await syncWithCleanup(databases, index, collectionName, log, forceFullSync);
+    return await syncWithCleanup(databases, index, collectionId, log, forceFullSync);
   } else {
     // Simple sync - just add/update documents
-    return await syncSimple(databases, index, collectionName, log, forceFullSync);
+    return await syncSimple(databases, index, collectionId, log, forceFullSync);
   }
 }

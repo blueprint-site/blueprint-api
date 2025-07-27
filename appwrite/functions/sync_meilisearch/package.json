@@ -14,6 +14,7 @@
   },
   "keywords": [],
   "dependencies": {
+    "dotenv": "^17.2.1",
     "meilisearch": "^0.40.0",
     "node-appwrite": "^12.0.1"
   },

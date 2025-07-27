@@ -54,7 +54,13 @@ function createMockContext(options = {}) {
     console.log(`[${timestamp}] ${message}`);
   };
 
-  return { req, res, log };
+  // Mock error function with timestamps
+  const error = (message) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] ${message}`);
+  };
+
+  return { req, res, log, error };
 }
 
 // Check required environment variables

@@ -7,10 +7,11 @@
  * @param {Function} log - Logging function
  * @returns {string|null} Last sync timestamp or null if first time
  */
+import { DATABASE_ID } from './config.js';
 export async function getLastSyncTime(databases, indexName, log) {
   try {
     // Fetch metadata document by ID (using indexName as document ID)
-    const doc = await databases.getDocument('main', 'sync_metadata', indexName);
+    const doc = await databases.getDocument(DATABASE_ID, 'sync_metadata', indexName);
     const lastSync = doc.lastSync;
     log(`Last sync for ${indexName}: ${lastSync}`);
     return lastSync;
@@ -38,12 +39,12 @@ export async function updateLastSyncTime(databases, indexName, timestamp, log) {
   };
   try {
     // Try updating existing metadata by document ID
-    await databases.updateDocument('main', 'sync_metadata', indexName, payload);
+    await databases.updateDocument(DATABASE_ID, 'sync_metadata', indexName, payload);
     log(`Updated sync timestamp for ${indexName}`);
   } catch (error) {
     if (error.code === 404) {
       // Create new metadata record with required fields
-      await databases.createDocument('main', 'sync_metadata', indexName, payload);
+      await databases.createDocument(DATABASE_ID, 'sync_metadata', indexName, payload);
       log(`Created sync metadata record for ${indexName}`);
     } else {
       log(`Error updating sync timestamp: ${error.message}`);
