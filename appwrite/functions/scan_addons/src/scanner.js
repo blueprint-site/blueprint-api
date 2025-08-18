@@ -88,14 +88,25 @@ export async function performFullScan(databases, curseforgeApiKey, options = {},
       results.curseforge.fetched += curseforgeMods.length;
       results.modrinth.fetched += modrinthMods.length;
 
-      // Normalize data
-      const normalizedCurseforge = curseforgeMods.map((mod) =>
-        normalizeModData(mod, 'CurseForge', LOADERS_LIST, CATEGORIES_LIST)
-      );
+      // Normalize data - filter out null results from invalid mods
+      const normalizedCurseforge = curseforgeMods
+        .map((mod) => normalizeModData(mod, 'CurseForge', LOADERS_LIST, CATEGORIES_LIST))
+        .filter(mod => mod !== null);
 
-      const normalizedModrinth = modrinthMods.map((mod) =>
-        normalizeModData(mod, 'Modrinth', LOADERS_LIST, CATEGORIES_LIST)
-      );
+      const normalizedModrinth = modrinthMods
+        .map((mod) => normalizeModData(mod, 'Modrinth', LOADERS_LIST, CATEGORIES_LIST))
+        .filter(mod => mod !== null);
+
+      // Log statistics about filtered mods
+      const filteredCurseforge = curseforgeMods.length - normalizedCurseforge.length;
+      const filteredModrinth = modrinthMods.length - normalizedModrinth.length;
+      
+      if (filteredCurseforge > 0) {
+        log(`⚠️  Filtered out ${filteredCurseforge} CurseForge mods due to missing names`);
+      }
+      if (filteredModrinth > 0) {
+        log(`⚠️  Filtered out ${filteredModrinth} Modrinth mods due to missing names`);
+      }
 
       // Add to all mods collection for final combination
       allMods.push(...normalizedCurseforge, ...normalizedModrinth);
@@ -214,14 +225,25 @@ export async function performIncrementalScan(databases, curseforgeApiKey, option
     results.curseforge.fetched = curseforgeMods.length;
     results.modrinth.fetched = modrinthMods.length;
 
-    // Normalize and save
-    const normalizedCurseforge = curseforgeMods.map((mod) =>
-      normalizeModData(mod, 'CurseForge', LOADERS_LIST, CATEGORIES_LIST)
-    );
+    // Normalize and save - filter out null results from invalid mods
+    const normalizedCurseforge = curseforgeMods
+      .map((mod) => normalizeModData(mod, 'CurseForge', LOADERS_LIST, CATEGORIES_LIST))
+      .filter(mod => mod !== null);
 
-    const normalizedModrinth = modrinthMods.map((mod) =>
-      normalizeModData(mod, 'Modrinth', LOADERS_LIST, CATEGORIES_LIST)
-    );
+    const normalizedModrinth = modrinthMods
+      .map((mod) => normalizeModData(mod, 'Modrinth', LOADERS_LIST, CATEGORIES_LIST))
+      .filter(mod => mod !== null);
+
+    // Log statistics about filtered mods
+    const filteredCurseforge = curseforgeMods.length - normalizedCurseforge.length;
+    const filteredModrinth = modrinthMods.length - normalizedModrinth.length;
+    
+    if (filteredCurseforge > 0) {
+      log(`⚠️  Filtered out ${filteredCurseforge} CurseForge mods due to missing names`);
+    }
+    if (filteredModrinth > 0) {
+      log(`⚠️  Filtered out ${filteredModrinth} Modrinth mods due to missing names`);
+    }
 
     // Save to database
     const curseforgeResults = await saveModsWithSource(

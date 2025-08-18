@@ -81,14 +81,75 @@ export function isMinecraftVersion(str) {
 }
 
 /**
+ * Extract a valid name from mod data with fallback logic
+ * @param {Object} mod - Raw mod data
+ * @param {string} source - Source platform
+ * @returns {string|null} Valid name or null if none found
+ */
+function extractValidName(mod, source) {
+  if (source === 'CurseForge') {
+    // Try multiple fields in order of preference
+    const candidates = [
+      mod.name,
+      mod.displayName,
+      mod.title,
+      mod.slug
+    ];
+    
+    for (const candidate of candidates) {
+      if (candidate && typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+    
+    // Last resort: use ID with prefix
+    if (mod.id) {
+      return `CurseForge-${mod.id}`;
+    }
+  } else if (source === 'Modrinth') {
+    // Try multiple fields in order of preference
+    const candidates = [
+      mod.title,
+      mod.name,
+      mod.displayName,
+      mod.slug
+    ];
+    
+    for (const candidate of candidates) {
+      if (candidate && typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+    
+    // Last resort: use project_id with prefix
+    if (mod.project_id) {
+      return `Modrinth-${mod.project_id}`;
+    }
+  }
+  
+  return null;
+}
+
+/**
  * Normalize mod data structure
  * @param {Object} mod - Raw mod data
  * @param {string} source - Source platform (CurseForge or Modrinth)
  * @param {Array} loadersList - List of valid loaders
  * @param {Array} categoriesList - List of valid categories
- * @returns {Object} Normalized mod data
+ * @returns {Object|null} Normalized mod data or null if invalid
  */
 export function normalizeModData(mod, source, loadersList, categoriesList) {
+  // Extract a valid name - this is critical for deduplication
+  const name = extractValidName(mod, source);
+  
+  if (!name) {
+    console.warn(`⚠️  Skipping mod due to missing name/title in ${source}:`, {
+      id: mod.id || mod.project_id,
+      availableFields: Object.keys(mod)
+    });
+    return null; // Return null for mods without valid names
+  }
+
   if (source === 'CurseForge') {
     // Extract tags from CurseForge mod files
     const allTags = [...new Set(mod.latestFiles?.flatMap((file) => file.gameVersions || []) || [])];
@@ -101,23 +162,23 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       (tag) => typeof tag === 'string' && isMinecraftVersion(tag)
     );
 
-    const categories = mod.categories.filter(
+    const categories = (mod.categories || []).filter(
       (category) => typeof category === 'string' && categoriesList.includes(category.toLowerCase())
     );
 
     return {
-      curseforge_id: mod.id.toString(),
+      curseforge_id: mod.id?.toString() || '',
       modrinth_id: null,
-      name: mod.name,
-      description: mod.summary,
-      slug: mod.slug,
+      name: name,
+      description: mod.summary || mod.description || '',
+      slug: mod.slug || '',
       sources: [source],
       icon: mod.logo?.thumbnailUrl || '',
-      created_at: mod.dateCreated,
-      updated_at: mod.dateModified,
-      authors: mod.authors.map((a) => a.name),
+      created_at: mod.dateCreated || '',
+      updated_at: mod.dateModified || '',
+      authors: (mod.authors || []).map((a) => a.name || ''),
       categories: categories,
-      downloads: mod.downloadCount,
+      downloads: mod.downloadCount || 0,
       curseforge_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
       loaders: modLoaders,
@@ -137,17 +198,17 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
 
     return {
       curseforge_id: null,
-      modrinth_id: mod.project_id,
-      name: mod.title,
-      slug: mod.slug,
-      description: mod.description,
+      modrinth_id: mod.project_id || '',
+      name: name,
+      slug: mod.slug || '',
+      description: mod.description || mod.body || '',
       sources: [source],
       icon: mod.icon_url || '',
-      created_at: mod.date_created,
-      updated_at: mod.date_modified,
-      authors: [mod.author],
+      created_at: mod.date_created || '',
+      updated_at: mod.date_modified || '',
+      authors: [mod.author || ''],
       categories: categories,
-      downloads: mod.downloads,
+      downloads: mod.downloads || 0,
       modrinth_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
       loaders: modLoaders,

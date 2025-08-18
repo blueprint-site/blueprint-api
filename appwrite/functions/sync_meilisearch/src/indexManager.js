@@ -14,7 +14,9 @@ export async function ensureIndexExists(meilisearch, indexName, log) {
   } catch (error) {
     if (error.code === 'index_not_found') {
       log(`Index '${indexName}' not found. Creating...`);
-      await meilisearch.createIndex(indexName, { primaryKey: 'id' });
+      // Create index and wait for creation task to complete
+      const { taskUid: createTask } = await meilisearch.createIndex(indexName, { primaryKey: 'id' });
+      await meilisearch.waitForTask(createTask);
       log(`Index '${indexName}' created successfully.`);
     } else {
       throw error;
@@ -22,8 +24,11 @@ export async function ensureIndexExists(meilisearch, indexName, log) {
   }
   
   // After ensuring index exists, ensure all fields are returned in full
-  await meilisearch.index(indexName).updateSettings({ displayedAttributes: ['*'] });
-  return meilisearch.index(indexName);
+  // Disable cropping and wait for settings update
+  const settingsIndex = meilisearch.index(indexName);
+  const { taskUid: settingsTask } = await settingsIndex.updateSettings({ displayedAttributes: ['*'] });
+  await settingsIndex.waitForTask(settingsTask);
+  return settingsIndex;
 }
 
 /**

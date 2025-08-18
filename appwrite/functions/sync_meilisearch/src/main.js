@@ -56,16 +56,29 @@ export default async ({ req, res, log, error = log }) => {
     host: process.env.MEILISEARCH_ENDPOINT,
     apiKey: process.env.MEILISEARCH_ADMIN_API_KEY,
   });
+  // Normalize request body: object or parsed JSON string
+  let parsedBody = {};
+  if (req.body && typeof req.body === 'object') {
+    parsedBody = req.body;
+  } else if (typeof req.body === 'string' && req.body.trim()) {
+    try {
+      parsedBody = JSON.parse(req.body);
+    } catch (e) {
+      error(`❌ Failed to parse request body: ${e.message}`);
+    }
+  }
+  log('[DEBUG] Request body:', parsedBody);
+  log('[DEBUG] Request query:', req.query);
 
   // Check for force full sync parameter
-  const forceFullSync = req.body?.forceFullSync === true || req.query?.forceFullSync === 'true';
+  const forceFullSync = parsedBody.forceFullSync === true || req.query?.forceFullSync === 'true';
   
   if (forceFullSync) {
     log('🔄 Force full sync requested - will ignore last sync timestamps');
   }
 
   // Check for delete-all option
-  const deleteAll = req.body?.deleteAll === true || req.query?.deleteAll === 'true';
+  const deleteAll = parsedBody.deleteAll === true || req.query?.deleteAll === 'true';
   if (deleteAll) {
     log('🗑️ Delete-all requested - removing every document from all indexes');
   }
@@ -79,10 +92,12 @@ export default async ({ req, res, log, error = log }) => {
     if (deleteAll) {
       try {
         const idx = meilisearch.index(config.indexName);
-        await idx.deleteAllDocuments();
+        // uruchom usuwanie
+        const { taskUid } = await idx.deleteAllDocuments();
+        // czekaj aż Meili zakończy operację
+        await meilisearch.waitForTask(taskUid);
         log(`🗑️ ${config.indexName}: all documents deleted`);
         results[config.indexName] = { deletedAll: true };
-        // Count index deletion
         totalDeleted += 1;
       } catch (err) {
         error(`❌ Error deleting all documents from ${config.indexName}: ${err.message}`);
