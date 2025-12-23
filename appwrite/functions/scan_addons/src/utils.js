@@ -182,6 +182,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       curseforge_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
       loaders: modLoaders,
+      body: mod.body || '',
     };
   } else if (source === 'Modrinth') {
     const categories = (mod.categories || []).filter(
@@ -201,7 +202,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       modrinth_id: mod.project_id || '',
       name: name,
       slug: mod.slug || '',
-      description: mod.description || mod.body || '',
+      description: mod.description || '',
       sources: [source],
       icon: mod.icon_url || '',
       created_at: mod.date_created || '',
@@ -212,6 +213,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       modrinth_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
       loaders: modLoaders,
+      body: mod.body || '',
     };
   }
 

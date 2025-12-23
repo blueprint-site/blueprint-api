@@ -106,3 +106,30 @@ export async function searchCurseForgeMods(
     throw error;
   }
 }
+
+export async function getCurseForgeDescription(
+  modId, 
+  apiKey, 
+  log = console.log
+) {
+  const url = `https://api.curseforge.com/v1/mods/${modId}/description`
+
+  const headers = {
+    'x-api-key': apiKey,
+  };
+
+  try {
+    log("Trying to get curseforge description")
+    const response = await axios.get(url, {
+      headers,
+    })
+    return response.data?.body
+  }
+  catch (error) {
+    log("Failed to get description")
+    if (error.response) {
+      log(`Response status: ${error.response.status}`);
+      log(`Response data: ${JSON.stringify(error.response.data)}`);
+    }
+  }
+}

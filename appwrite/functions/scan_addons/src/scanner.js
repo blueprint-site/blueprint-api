@@ -1,4 +1,4 @@
-import { searchCurseForgeMods } from './curseforgeClient.js';
+import { searchCurseForgeMods, getCurseForgeDescription } from './curseforgeClient.js';
 import { searchModrinthMods } from './modrinthClient.js';
 import { saveModsWithSource, combineAndUpsertMods, getModsCount } from './databaseOperations.js';
 import { normalizeModData, delay } from './utils.js';
@@ -8,6 +8,27 @@ import {
   PERFORMANCE_SETTINGS,
   REQUIRED_ENV_VARS,
 } from './config.js';
+
+async function attachCurseforgeDescriptions(mods, apiKey, log) {
+  if (!mods.length) {
+    return mods;
+  }
+
+  await Promise.all(
+    mods.map(async (mod) => {
+      try {
+        const description = await getCurseForgeDescription(mod.id, apiKey, log);
+        if (description) {
+          mod.body = description;
+        }
+      } catch (error) {
+        log(`⚠️  Description fetch failed for CurseForge mod ${mod.id}: ${error.message}`);
+      }
+    })
+  );
+
+  return mods;
+}
 
 /**
  * Perform a complete scan of addons from all sources
@@ -81,6 +102,8 @@ export async function performFullScan(databases, curseforgeApiKey, options = {},
         log('❌ No more data found. Stopping iterations.');
         break;
       }
+
+      await attachCurseforgeDescriptions(curseforgeMods, curseforgeApiKey, log);
 
       log(`📦 Fetched: ${curseforgeMods.length} CurseForge, ${modrinthMods.length} Modrinth`);
 
@@ -218,12 +241,15 @@ export async function performIncrementalScan(databases, curseforgeApiKey, option
     const [curseforgeResponse, modrinthMods] = await Promise.all([
       searchCurseForgeMods(curseforgeApiKey, offset, batchSize, searchQuery, undefined, log),
       searchModrinthMods(offset, batchSize, searchQuery, undefined, log),
+
     ]);
 
     const curseforgeMods = curseforgeResponse.data || [];
 
     results.curseforge.fetched = curseforgeMods.length;
     results.modrinth.fetched = modrinthMods.length;
+
+    await attachCurseforgeDescriptions(curseforgeMods, curseforgeApiKey, log);
 
     // Normalize and save - filter out null results from invalid mods
     const normalizedCurseforge = curseforgeMods
