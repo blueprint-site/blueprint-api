@@ -123,7 +123,7 @@ export async function getCurseForgeDescription(
     const response = await axios.get(url, {
       headers,
     })
-    return response.data?.body
+    return response.data.body
   }
   catch (error) {
     log("Failed to get description")

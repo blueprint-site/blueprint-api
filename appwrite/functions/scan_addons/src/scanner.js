@@ -1,5 +1,5 @@
 import { searchCurseForgeMods, getCurseForgeDescription } from './curseforgeClient.js';
-import { searchModrinthMods } from './modrinthClient.js';
+import { searchModrinthMods, getModrinthProject } from './modrinthClient.js';
 import { saveModsWithSource, combineAndUpsertMods, getModsCount } from './databaseOperations.js';
 import { normalizeModData, delay } from './utils.js';
 import {
@@ -23,6 +23,32 @@ async function attachCurseforgeDescriptions(mods, apiKey, log) {
         }
       } catch (error) {
         log(`⚠️  Description fetch failed for CurseForge mod ${mod.id}: ${error.message}`);
+      }
+    })
+  );
+
+  return mods;
+}
+
+async function attachModrinthDescriptions(mods, log) {
+  if (!mods.length) {
+    return mods;
+  }
+
+  await Promise.all(
+    mods.map(async (mod) => {
+      try {
+        const identifier = mod.slug || mod.project_id;
+        if (!identifier) {
+          return;
+        }
+
+        const project = await getModrinthProject(identifier, log);
+        if (project?.body) {
+          mod.body = project.body;
+        }
+      } catch (error) {
+        log(`⚠️  Description fetch failed for Modrinth mod ${mod.slug || mod.project_id}: ${error.message}`);
       }
     })
   );
@@ -103,7 +129,10 @@ export async function performFullScan(databases, curseforgeApiKey, options = {},
         break;
       }
 
-      await attachCurseforgeDescriptions(curseforgeMods, curseforgeApiKey, log);
+      await Promise.all([
+        attachCurseforgeDescriptions(curseforgeMods, curseforgeApiKey, log),
+        attachModrinthDescriptions(modrinthMods, log),
+      ]);
 
       log(`📦 Fetched: ${curseforgeMods.length} CurseForge, ${modrinthMods.length} Modrinth`);
 
@@ -249,7 +278,10 @@ export async function performIncrementalScan(databases, curseforgeApiKey, option
     results.curseforge.fetched = curseforgeMods.length;
     results.modrinth.fetched = modrinthMods.length;
 
-    await attachCurseforgeDescriptions(curseforgeMods, curseforgeApiKey, log);
+    await Promise.all([
+      attachCurseforgeDescriptions(curseforgeMods, curseforgeApiKey, log),
+      attachModrinthDescriptions(modrinthMods, log),
+    ]);
 
     // Normalize and save - filter out null results from invalid mods
     const normalizedCurseforge = curseforgeMods

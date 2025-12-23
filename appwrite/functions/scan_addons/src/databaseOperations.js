@@ -43,10 +43,13 @@ export async function saveModsWithSource(databases, mods, source, log) {
           new Set([...(existingMod.authors || []), ...(mod.authors || [])])
         );
 
+        const body = mod.body && mod.body.trim().length > 0 ? mod.body : existingMod.body;
+
         await retryOnRateLimit(
           () =>
             databases.updateDocument('main', 'addons', existingMod.$id, {
               ...mod,
+              body,
               sources: updatedSources,
               authors: updatedAuthors,
               curseforge_id: existingMod.curseforge_id || mod.curseforge_id,
