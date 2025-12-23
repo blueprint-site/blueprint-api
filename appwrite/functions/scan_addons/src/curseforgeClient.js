@@ -108,11 +108,11 @@ export async function searchCurseForgeMods(
 }
 
 export async function getCurseForgeDescription(
-  modId, 
+  mod, 
   apiKey, 
   log = console.log
 ) {
-  const url = `https://api.curseforge.com/v1/mods/${modId}/description`
+  const url = `https://api.curseforge.com/v1/mods/${mod}/description`
 
   const headers = {
     'x-api-key': apiKey,
@@ -123,7 +123,8 @@ export async function getCurseForgeDescription(
     const response = await axios.get(url, {
       headers,
     })
-    return response.data.body
+    // log("Description is: " + JSON.stringify(response.data));
+    return JSON.stringify(response.data)
   }
   catch (error) {
     log("Failed to get description")
