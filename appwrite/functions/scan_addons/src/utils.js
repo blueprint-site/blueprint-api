@@ -179,7 +179,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       authors: (mod.authors || []).map((a) => a.name || ''),
       categories: categories,
       downloads: mod.downloadCount || 0,
-      curseforge_raw: JSON.stringify(mod),
+      // curseforge_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
       loaders: modLoaders,
       body: mod.body || '',
@@ -210,7 +210,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       authors: [mod.author || ''],
       categories: categories,
       downloads: mod.downloads || 0,
-      modrinth_raw: JSON.stringify(mod),
+      // modrinth_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
       loaders: modLoaders,
       body: mod.body || '',
@@ -249,9 +249,9 @@ export function combineDuplicateMods(mods) {
       existingMod.updated_at = existingMod.updated_at || mod.updated_at;
       existingMod.curseforge_id = existingMod.curseforge_id || mod.curseforge_id;
       existingMod.modrinth_id = existingMod.modrinth_id || mod.modrinth_id;
-      existingMod.curseforge_raw = existingMod.curseforge_raw || mod.curseforge_raw;
-      existingMod.modrinth_raw = existingMod.modrinth_raw || mod.modrinth_raw;
-      existingMod.modrinth_raw = existingMod.modrinth_raw || mod.modrinth_raw;
+      // existingMod.curseforge_raw = existingMod.curseforge_raw || mod.curseforge_raw;
+      // existingMod.modrinth_raw = existingMod.modrinth_raw || mod.modrinth_raw;
+      // existingMod.modrinth_raw = existingMod.modrinth_raw || mod.modrinth_raw;
     } else {
       modMap.set(mod.name, { ...mod });
     }
