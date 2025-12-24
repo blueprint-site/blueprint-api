@@ -18,6 +18,7 @@ async function attachCurseforgeDescriptions(mods, apiKey, log) {
     mods.map(async (mod) => {
       try {
         const description = await getCurseForgeDescription(mod.id, apiKey, log);
+        // console.log("DESCR"+description)
         if (description) {
           mod.body = description;
         }
@@ -152,7 +153,7 @@ export async function performFullScan(databases, curseforgeApiKey, options = {},
       // Log statistics about filtered mods
       const filteredCurseforge = curseforgeMods.length - normalizedCurseforge.length;
       const filteredModrinth = modrinthMods.length - normalizedModrinth.length;
-      
+
       if (filteredCurseforge > 0) {
         log(`⚠️  Filtered out ${filteredCurseforge} CurseForge mods due to missing names`);
       }
@@ -295,7 +296,7 @@ export async function performIncrementalScan(databases, curseforgeApiKey, option
     // Log statistics about filtered mods
     const filteredCurseforge = curseforgeMods.length - normalizedCurseforge.length;
     const filteredModrinth = modrinthMods.length - normalizedModrinth.length;
-    
+
     if (filteredCurseforge > 0) {
       log(`⚠️  Filtered out ${filteredCurseforge} CurseForge mods due to missing names`);
     }
