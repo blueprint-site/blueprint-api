@@ -249,7 +249,13 @@ export function combineDuplicateMods(mods) {
       existingMod.updated_at = existingMod.updated_at || mod.updated_at;
       existingMod.curseforge_id = existingMod.curseforge_id || mod.curseforge_id;
       existingMod.modrinth_id = existingMod.modrinth_id || mod.modrinth_id;
-      existingMod.body = existingMod.body || mod.body;
+
+      if (mod.sources.includes('Modrinth') && mod.body) {
+        existingMod.body = mod.body;
+      } else if (!existingMod.body && mod.body) {
+        existingMod.body = mod.body;
+      }
+      
       // existingMod.curseforge_raw = existingMod.curseforge_raw || mod.curseforge_raw;
       // existingMod.modrinth_raw = existingMod.modrinth_raw || mod.modrinth_raw;
       // existingMod.modrinth_raw = existingMod.modrinth_raw || mod.modrinth_raw;

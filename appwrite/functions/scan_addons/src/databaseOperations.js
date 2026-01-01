@@ -43,7 +43,14 @@ export async function saveModsWithSource(databases, mods, source, log) {
           new Set([...(existingMod.authors || []), ...(mod.authors || [])])
         );
 
-        const body = mod.body && mod.body.trim().length > 0 ? mod.body : existingMod.body;
+        let body = existingMod.body;
+        if (source === 'Modrinth' && mod.body && mod.body.trim().length > 0) {
+          body = mod.body;
+        } else if (source === 'CurseForge' && mod.body && mod.body.trim().length > 0) {
+          if (!existingMod.sources.includes('Modrinth') || !existingMod.body) {
+            body = mod.body;
+          }
+        }
 
         await retryOnRateLimit(
           () =>
