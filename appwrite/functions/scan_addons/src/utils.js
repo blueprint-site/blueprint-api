@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 /**
  * Throws an error if any required environment variables are missing
  * @param {Object} env - Environment variables object
@@ -286,4 +288,62 @@ export function validateEnvironment() {
     isValid: errors.length === 0,
     errors,
   };
+}
+
+/**
+ * Sends a Discord webhook with the provided data
+ * @param {string} webhookUrl - The Discord webhook URL
+ * @param {object} data - The JSON data to send
+ */
+export async function sendDiscordWebhook(webhookUrl, data) {
+  if (!webhookUrl) {
+    console.warn('DISCORD_WEBHOOK_URL is not set. Skipping webhook notification.');
+    return;
+  }
+
+  const payload = {
+    embeds: [
+      {
+        title: 'Addon Scan Report',
+        description: 'Summary of the latest addon scan.',
+        color: 0x00ff00, // Green
+        fields: [
+          {
+            name: 'Total Scanned',
+            value: data.totalScanned,
+            inline: true,
+          },
+          {
+            name: 'New Addons',
+            value: data.newAddons,
+            inline: true,
+          },
+          {
+            name: 'Updated Addons',
+            value: data.updatedAddons,
+            inline: true,
+          },
+        ],
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      console.error(`Error sending Discord webhook: ${response.statusText}`);
+    } else {
+      console.log('Successfully sent Discord webhook.');
+    }
+  } catch (error) {
+    console.error('Failed to send Discord webhook:', error);
+  }
 }

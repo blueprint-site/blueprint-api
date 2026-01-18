@@ -23,7 +23,7 @@ async function attachCurseforgeDescriptions(mods, apiKey, log) {
           mod.body = description;
         }
       } catch (error) {
-        log(`⚠️  Description fetch failed for CurseForge mod ${mod.id}: ${error.message}`);
+        log(`⚠️  Description fetch failed for CurseForge mod ${mod.id}: ${error.stack}`);
       }
     })
   );
@@ -49,7 +49,7 @@ async function attachModrinthDescriptions(mods, log) {
           mod.body = project.body;
         }
       } catch (error) {
-        log(`⚠️  Description fetch failed for Modrinth mod ${mod.slug || mod.project_id}: ${error.message}`);
+        log(`⚠️  Description fetch failed for Modrinth mod ${mod.slug || mod.project_id}: ${error.stack}`);
       }
     })
   );

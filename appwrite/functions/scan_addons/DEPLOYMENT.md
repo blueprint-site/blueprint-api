@@ -84,6 +84,7 @@ appwrite functions updateVariable \
     --key=APPWRITE_FUNCTION_API_KEY \
     --value=your-appwrite-api-key
 ```
+u also need DISCORD_WEBHOOK_URL
 
 ### 4. Test the Deployment
 

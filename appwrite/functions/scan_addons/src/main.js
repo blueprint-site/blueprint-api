@@ -1,7 +1,7 @@
 import { Client, Databases } from 'node-appwrite';
 import { performFullScan, performQuickScan, performHealthCheck } from './scanner.js';
-import { validateEnvironment } from './utils.js';
-import { PERFORMANCE_SETTINGS } from './config.js';
+import { throwIfMissing, sendDiscordWebhook, getEnvVar } from './utils.js';
+import { REQUIRED_ENV_VARS, PERFORMANCE_SETTINGS } from './config.js';
 
 /**
  * Main Appwrite Function handler for Scan Addons
@@ -43,15 +43,14 @@ async function main({ req, res, log: appwriteLog, error: appwriteError }) {
     logMessage('🚀 Scan Addons function started');
 
     // Validate environment variables
-    const envValidation = validateEnvironment();
-    if (!envValidation.isValid) {
-      const errorMsg = `❌ Environment validation failed: ${envValidation.errors.join(', ')}`;
-      logError(errorMsg);
+    try {
+      throwIfMissing(process.env, REQUIRED_ENV_VARS);
+    } catch (err) {
+      logError(err.message);
       return res.json(
         {
           success: false,
-          error: 'Environment validation failed',
-          details: envValidation.errors,
+          error: err.message,
           timestamp: new Date().toISOString(),
         },
         400
@@ -122,6 +121,21 @@ async function main({ req, res, log: appwriteLog, error: appwriteError }) {
         combined: result.combined || {},
       })}`
     );
+
+    // Send Discord webhook notification
+    const discordWebhookUrl = getEnvVar('DISCORD_WEBHOOK_URL');
+    if (result.success && discordWebhookUrl) {
+      const webhookData = {
+        totalScanned: result.totalMods || 0,
+        newAddons: result.combined?.created || 0,
+        updatedAddons: result.combined?.updated || 0,
+      };
+      await sendDiscordWebhook(discordWebhookUrl, webhookData);
+    }
+
+    const endTime = Date.now();
+    const totalExecutionTime = endTime - startTime;
+    logMessage(`✅ Scan Addons function finished in ${totalExecutionTime / 1000} seconds`);
 
     return res.json({
       success: true,
