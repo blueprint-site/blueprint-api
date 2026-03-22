@@ -10,9 +10,10 @@
     "dev": "node --watch src/main.js"
   },
   "dependencies": {
-    "appwrite": "^17.0.0",
+    "appwrite": "^21.5.0",
     "axios": "^1.7.9",
-    "node-appwrite": "^16.0.0"
+    "node-appwrite": "^16.0.0",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "dotenv": "^16.4.7"

@@ -32,6 +32,70 @@ export function delay(ms) {
 }
 
 /**
+ * Convert an input value into a valid ISO timestamp string.
+ * @param {string} value - Candidate timestamp value
+ * @returns {string|null} Normalized ISO string or null when invalid
+ */
+export function toValidIsoString(value) {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  return new Date(parsed).toISOString();
+}
+
+/**
+ * Pick the newest valid timestamp from two candidates.
+ * @param {string} left - Existing timestamp
+ * @param {string} right - New timestamp
+ * @returns {string} Newest valid timestamp, or an empty string
+ */
+export function pickLatestTimestamp(left, right) {
+  const leftIso = toValidIsoString(left);
+  const rightIso = toValidIsoString(right);
+
+  if (!leftIso && !rightIso) {
+    return '';
+  }
+  if (!leftIso) {
+    return rightIso;
+  }
+  if (!rightIso) {
+    return leftIso;
+  }
+
+  return Date.parse(leftIso) >= Date.parse(rightIso) ? leftIso : rightIso;
+}
+
+/**
+ * Pick the oldest valid timestamp from two candidates.
+ * @param {string} left - Existing timestamp
+ * @param {string} right - New timestamp
+ * @returns {string} Oldest valid timestamp, or an empty string
+ */
+export function pickEarliestTimestamp(left, right) {
+  const leftIso = toValidIsoString(left);
+  const rightIso = toValidIsoString(right);
+
+  if (!leftIso && !rightIso) {
+    return '';
+  }
+  if (!leftIso) {
+    return rightIso;
+  }
+  if (!rightIso) {
+    return leftIso;
+  }
+
+  return Date.parse(leftIso) <= Date.parse(rightIso) ? leftIso : rightIso;
+}
+
+/**
  * Retry a function with exponential backoff for rate limiting
  * @param {Function} func - Function to retry
  * @param {number} maxRetries - Maximum number of retries
@@ -178,7 +242,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       icon: mod.logo?.thumbnailUrl || '',
       created_at: mod.dateCreated || '',
       updated_at: mod.dateModified || '',
-      authors: (mod.authors || []).map((a) => a.name || ''),
+      authors: (mod.authors || []).map((a) => a.name || '').filter((name) => name.length > 0),
       categories: categories,
       downloads: mod.downloadCount || 0,
       // curseforge_raw: JSON.stringify(mod),
@@ -209,7 +273,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       icon: mod.icon_url || '',
       created_at: mod.date_created || '',
       updated_at: mod.date_modified || '',
-      authors: [mod.author || ''],
+      authors: (mod.author && mod.author.trim().length > 0) ? [mod.author.trim()] : [],
       categories: categories,
       downloads: mod.downloads || 0,
       // modrinth_raw: JSON.stringify(mod),
@@ -245,10 +309,10 @@ export function combineDuplicateMods(mods) {
         new Set([...(existingMod.loaders || []), ...(mod.loaders || [])])
       );
       existingMod.authors = Array.from(
-        new Set([...(existingMod.authors || []), ...(mod.authors || [])])
+        new Set([...(mod.authors || [])])
       );
-      existingMod.created_at = existingMod.created_at || mod.created_at;
-      existingMod.updated_at = existingMod.updated_at || mod.updated_at;
+      existingMod.created_at = pickEarliestTimestamp(existingMod.created_at, mod.created_at);
+      existingMod.updated_at = pickLatestTimestamp(existingMod.updated_at, mod.updated_at);
       existingMod.curseforge_id = existingMod.curseforge_id || mod.curseforge_id;
       existingMod.modrinth_id = existingMod.modrinth_id || mod.modrinth_id;
 

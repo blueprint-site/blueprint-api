@@ -1,5 +1,10 @@
 import { Query } from 'node-appwrite';
-import { retryOnRateLimit, combineDuplicateMods } from './utils.js';
+import {
+  retryOnRateLimit,
+  combineDuplicateMods,
+  pickEarliestTimestamp,
+  pickLatestTimestamp,
+} from './utils.js';
 
 /**
  * Save or update mods in the database
@@ -56,6 +61,8 @@ export async function saveModsWithSource(databases, mods, source, log) {
           () =>
             databases.updateDocument('main', 'addons', existingMod.$id, {
               ...mod,
+              created_at: pickEarliestTimestamp(existingMod.created_at, mod.created_at),
+              updated_at: pickLatestTimestamp(existingMod.updated_at, mod.updated_at),
               body,
               sources: updatedSources,
               authors: updatedAuthors,

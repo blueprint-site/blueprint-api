@@ -83,7 +83,7 @@ export async function searchCurseForgeMods(
     modLoaderTypes: ['Forge', 'Fabric', 'NeoForge'],
     gameVersion: gameVersions,
     sortOrder: 'desc',
-    sortField: 'downloadCount',
+    sortField: '6',
     classId: 6, // Mods class ID
   };
 
