@@ -4,6 +4,7 @@ import {
   combineDuplicateMods,
   pickEarliestTimestamp,
   pickLatestTimestamp,
+  normalizeModLoaders,
 } from './utils.js';
 
 /**
@@ -47,6 +48,7 @@ export async function saveModsWithSource(databases, mods, source, log) {
         const updatedAuthors = Array.from(
           new Set([...(existingMod.authors || []), ...(mod.authors || [])])
         );
+        const updatedLoaders = normalizeModLoaders(mod.loaders || []);
 
         let body = existingMod.body;
         if (source === 'Modrinth' && mod.body && mod.body.trim().length > 0) {
@@ -69,6 +71,7 @@ export async function saveModsWithSource(databases, mods, source, log) {
               curseforge_id: existingMod.curseforge_id || mod.curseforge_id,
               modrinth_id: existingMod.modrinth_id || mod.modrinth_id,
               downloads: (existingMod.downloads || 0) + (mod.downloads || 0),
+              loaders: updatedLoaders,
             }),
           5,
           1000,
@@ -80,7 +83,11 @@ export async function saveModsWithSource(databases, mods, source, log) {
       } else {
         // Create new mod
         await retryOnRateLimit(
-          () => databases.createDocument('main', 'addons', 'unique()', mod),
+          () =>
+            databases.createDocument('main', 'addons', 'unique()', {
+              ...mod,
+              loaders: normalizeModLoaders(mod.loaders || []),
+            }),
           5,
           1000,
           log
@@ -139,29 +146,34 @@ export async function combineAndUpsertMods(databases, allMods, log) {
 
   for (const mod of combinedMods) {
     try {
+      const normalizedMod = {
+        ...mod,
+        loaders: normalizeModLoaders(mod.loaders || []),
+      };
+
       const existingMods = await databases.listDocuments('main', 'addons', [
-        Query.equal('name', mod.name),
+        Query.equal('name', normalizedMod.name),
       ]);
 
       if (existingMods.total > 0) {
         const existingMod = existingMods.documents[0];
         await retryOnRateLimit(
-          () => databases.updateDocument('main', 'addons', existingMod.$id, mod),
+          () => databases.updateDocument('main', 'addons', existingMod.$id, normalizedMod),
           5,
           1000,
           log
         );
         updated++;
-        log(`🔄 Combined mod updated: ${mod.name}`);
+        log(`🔄 Combined mod updated: ${normalizedMod.name}`);
       } else {
         await retryOnRateLimit(
-          () => databases.createDocument('main', 'addons', 'unique()', mod),
+          () => databases.createDocument('main', 'addons', 'unique()', normalizedMod),
           5,
           1000,
           log
         );
         created++;
-        log(`➕ Combined mod created: ${mod.name}`);
+        log(`➕ Combined mod created: ${normalizedMod.name}`);
       }
     } catch (error) {
       errors++;

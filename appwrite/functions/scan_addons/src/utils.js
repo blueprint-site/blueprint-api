@@ -146,6 +146,43 @@ export function isMinecraftVersion(str) {
   ); // Generic "snapshot" tag
 }
 
+const CANONICAL_MODLOADERS = {
+  forge: 'Forge',
+  neoforge: 'NeoForge',
+  fabric: 'Fabric',
+  quilt: 'Quilt',
+};
+
+/**
+ * Normalize loaders to canonical Appwrite values and drop unsupported entries.
+ * @param {Array} loaders - Raw loader values
+ * @returns {Array} Canonical loader list
+ */
+export function normalizeModLoaders(loaders = []) {
+  if (!Array.isArray(loaders)) {
+    return [];
+  }
+
+  const normalized = [];
+  const seen = new Set();
+
+  for (const loader of loaders) {
+    if (typeof loader !== 'string') {
+      continue;
+    }
+
+    const canonical = CANONICAL_MODLOADERS[loader.trim().toLowerCase()];
+    if (!canonical || seen.has(canonical)) {
+      continue;
+    }
+
+    seen.add(canonical);
+    normalized.push(canonical);
+  }
+
+  return normalized;
+}
+
 /**
  * Extract a valid name from mod data with fallback logic
  * @param {Object} mod - Raw mod data
@@ -247,7 +284,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       downloads: mod.downloadCount || 0,
       // curseforge_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
-      loaders: modLoaders,
+      loaders: normalizeModLoaders(modLoaders),
       body: mod.body || '',
     };
   } else if (source === 'Modrinth') {
@@ -278,7 +315,7 @@ export function normalizeModData(mod, source, loadersList, categoriesList) {
       downloads: mod.downloads || 0,
       // modrinth_raw: JSON.stringify(mod),
       minecraft_versions: minecraftVersions,
-      loaders: modLoaders,
+      loaders: normalizeModLoaders(modLoaders),
       body: mod.body || '',
     };
   }
@@ -305,9 +342,10 @@ export function combineDuplicateMods(mods) {
       existingMod.minecraft_versions = Array.from(
         new Set([...(existingMod.minecraft_versions || []), ...(mod.minecraft_versions || [])])
       );
-      existingMod.loaders = Array.from(
-        new Set([...(existingMod.loaders || []), ...(mod.loaders || [])])
-      );
+      existingMod.loaders = normalizeModLoaders([
+        ...(existingMod.loaders || []),
+        ...(mod.loaders || []),
+      ]);
       existingMod.authors = Array.from(
         new Set([...(mod.authors || [])])
       );
