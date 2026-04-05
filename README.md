@@ -1,5 +1,8 @@
 # Blueprint Backend Repo
 
+### Ai disclosure
+The code for the backend functions was written heavily by ai.
+
 ## Appwrite
 
 ### Functions
