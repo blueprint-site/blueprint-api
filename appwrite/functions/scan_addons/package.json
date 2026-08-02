@@ -10,13 +10,13 @@
     "dev": "node --watch src/main.js"
   },
   "dependencies": {
-    "appwrite": "^21.5.0",
-    "axios": "^1.7.9",
-    "node-appwrite": "^16.0.0",
+    "appwrite": "^26.2.0",
+    "axios": "^1.19.0",
+    "node-appwrite": "^27.1.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "dotenv": "^16.4.7"
+    "dotenv": "^17.4.2"
   },
   "keywords": [
     "appwrite",

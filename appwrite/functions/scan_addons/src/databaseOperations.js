@@ -27,10 +27,10 @@ export async function saveModsWithSource(databases, mods, source, log) {
     try {
       // Additional validation to ensure we have a valid name
       if (!mod.name || typeof mod.name !== 'string' || mod.name.trim().length === 0) {
-        log(`⚠️  Skipping mod without valid name: ${JSON.stringify({ 
-          curseforge_id: mod.curseforge_id, 
+        log(`⚠️  Skipping mod without valid name: ${JSON.stringify({
+          curseforge_id: mod.curseforge_id,
           modrinth_id: mod.modrinth_id,
-          slug: mod.slug 
+          slug: mod.slug
         })}`);
         skipped++;
         continue;
@@ -236,29 +236,29 @@ export async function getModsBySource(databases, source, log) {
 export async function analyzeProblematicMods(databases, log) {
   try {
     log('🔍 Analyzing mods for name issues...');
-    
+
     // Get all mods to analyze
     let allMods = [];
     let offset = 0;
     const limit = 100;
-    
+
     while (true) {
       const result = await databases.listDocuments('main', 'addons', [
         Query.limit(limit),
         Query.offset(offset)
       ]);
-      
+
       allMods.push(...result.documents);
-      
+
       if (result.documents.length < limit) {
         break;
       }
-      
+
       offset += limit;
     }
-    
+
     log(`📊 Analyzing ${allMods.length} total mods...`);
-    
+
     const issues = {
       emptyNames: [],
       whitespaceOnly: [],
@@ -266,15 +266,15 @@ export async function analyzeProblematicMods(databases, log) {
       duplicateNames: {},
       total: allMods.length
     };
-    
+
     const nameCount = {};
-    
+
     for (const mod of allMods) {
       const name = mod.name || '';
-      
+
       // Count name occurrences for duplicate detection
       nameCount[name] = (nameCount[name] || 0) + 1;
-      
+
       // Check for various issues
       if (name.length === 0) {
         issues.emptyNames.push({
@@ -300,27 +300,27 @@ export async function analyzeProblematicMods(databases, log) {
         });
       }
     }
-    
+
     // Find duplicates (more than one mod with same name)
     for (const [name, count] of Object.entries(nameCount)) {
       if (count > 1) {
         issues.duplicateNames[name] = count;
       }
     }
-    
+
     // Log summary
     log('📋 Analysis Results:');
     log(`   - Empty names: ${issues.emptyNames.length}`);
     log(`   - Whitespace-only names: ${issues.whitespaceOnly.length}`);
     log(`   - Generated fallback names: ${issues.generatedNames.length}`);
     log(`   - Duplicate names: ${Object.keys(issues.duplicateNames).length}`);
-    
+
     if (issues.emptyNames.length > 0) {
       log('❌ Mods with empty names found - this indicates a data quality issue');
     }
-    
+
     return issues;
-    
+
   } catch (error) {
     log(`❌ Error analyzing problematic mods: ${error.message}`);
     return { error: error.message };
